@@ -5,17 +5,15 @@ from collections import namedtuple
 
 '''
 Each of these should be a function 
-of z == ln(M_N/T). The entries carrying a flavor index
-_a also take an additional integer parameter a (0,1,2)
-corresponding to (e,mu,tau). 
+of z == ln(M_N/T). 
 '''
 IntegratedRates = namedtuple('IntegratedRates', [
-    "GammaBar_nu_a", # Scalar
-    "GammaBarTilde_nu_a", # 2x2
-    "HamiltonianBar_N", # 2x2
-    "GammaBar_N", # 2x2
-    "GammaBarTilde_alpha_N", # 2x2
-    "Seq" # 2x2
+    "GammaBar_nu_a", # (3)
+    "GammaBarTilde_nu_a", # (3,2,2)
+    "GammaBarTilde_N_a",  # (3,2,2)
+    "HamiltonianBar_N", # (2,2)
+    "GammaBar_N", # (2,2)
+    "Seq" # (2,2)
 ])
 
 '''
