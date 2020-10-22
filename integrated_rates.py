@@ -1,44 +1,7 @@
 from collections import namedtuple
 import numpy as np
 from yukawasCI import FM
-
-'''
-Each of these should be a (2*2) matrix valued function 
-of z == ln(M_N/T). The entries carrying a flavor index
-_a also take an additional integer parameter a (0,1,2)
-corresponding to (e,mu,tau). 
-'''
-IntegratedRates = namedtuple('IntegratedRates', [
-    "GammaBar_nu_a",
-    "GammaBarTilde_nu_a",
-    "HamiltonianBar_N",
-    "GammaBar_N",
-    "GammaBarTilde_alpha_N",
-    "Seq"
-])
-
-'''
-These are the (interpolated) temperature dependent coefficients 
-that are multiplied by the model dependent parts to get the 
-integrated rates. Each entry is a function of T. 
-'''
-TDependentRateCoeffs = namedtuple('TDependentRateCoeffs', [
-    "nugp",
-    "nugm",
-    "hnlgp",
-    "hnlgm",
-    "hnlhp",
-    "hnlhm",
-    "hnlh0",
-    "hnldeq"
-])
-
-'''
-Point in model parameter space (reals)
-'''
-ModelParams = namedtuple('ModelParams', [
-    "M", "dM", "Imw", "Rew", "delta", "eta"
-])
+from common import IntegratedRates
 
 def get_integrated_rates(mp, tc):
     '''
@@ -71,27 +34,29 @@ def get_integrated_rates(mp, tc):
         [h[a, 0] * hc[a, 0] + h[a, 1] * hc[a, 1]
          for a in range(3)])
 
-    def T(z):
+    def Tz(z):
         return mp.M*np.exp(-z)
 
     # Construct the integrated rate functions
     def Gammabar_nu_a(z, a):
-        return hhc(a)*(tc.nugp(T(z)) + tc.nugm(T(z)))
+        return hhc(a)*(tc.nugp(Tz(z)) + tc.nugm(Tz(z)))
 
     def GammaBarTilde_nu_a(z, a):
-        return -tc.hnlgp(T(z))*YNplus(a) + tc.hnlgm(T(z))*YNminus(a)
+        return -tc.hnlgp(Tz(z))*YNplus[a].Tz + tc.hnlgm(Tz(z))*YNminus[a].Tz
 
     def HamiltonianBar_N(z):
-        pass
+        return -mp.delta*np.array([[0,1],[1,0]])*tc.hnlh0(Tz(z)) \
+            + tc.hnlhp(Tz(z))*np.sum(YNplus, axis=1) \
+            + tc.hnlhm(Tz(z))*np.sum(YNminus, axis=1)
 
     def GammaBar_N(z):
-        return tc.hnlgp*np.sum(YNplus, axis=1) + tc.hnlgm*np.sum(YNminus, axis=1)
+        return tc.hnlgp(Tz(z))*np.sum(YNplus, axis=1) + tc.hnlgm(Tz(z))*np.sum(YNminus, axis=1)
 
-    def GammaBarTilde_alpha_N(z):
-        pass
+    def GammaBarTilde_alpha_N(z, a):
+        return -tc.nugp(Tz(z))*YNplus[a] + tc.nugm(Tz(z))*YNminus[a]
 
     def Seq(z):
-        pass
+        return tc.hnldeq(Tz(z))*np.identity(2)
 
     return IntegratedRates(
         Gammabar_nu_a,
