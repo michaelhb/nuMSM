@@ -10,7 +10,7 @@ AveragedStateVector = namedtuple("AveragedStateVector",
                                   "n_plus_11", "n_plus_22", "n_plus_12",
                                   "n_minus_11", "n_minus_22", "n_minus_12"])
 
-def coefficient_matrix(z, rt, mp, suscT):
+def coefficient_matrix(z, rt, mp, suscT, SMData):
     '''
     :param z: integration coordinate z = ln(M/T)
     :param rt: IntegratedRates
@@ -23,7 +23,12 @@ def coefficient_matrix(z, rt, mp, suscT):
 
     susc = lambda z: suscT(mp.M*np.exp(-z))
 
-    return np.array([[-(np.power(mp.M * np.exp(-z), 2) * np.real(GB_nu_a[0](z)) * susc[0, 0](z)) / 6,
+    #prefactor compensating for change of variables T -> z
+    Mp = 1.22e19 # Planck mass
+    MpStar = Mp * np.sqrt(45.0 / (4 * np.pi ** 3 * SMData.geff(mp.M*np.exp(-z))))
+    jac = (MpStar*np.exp(-2*z))/(mp.M**2)
+
+    return jac*np.array([[-(np.power(mp.M * np.exp(-z), 2) * np.real(GB_nu_a[0](z)) * susc[0, 0](z)) / 6,
              -(np.power(mp.M * np.exp(-z), 2) * np.real(GB_nu_a[0](z)) * susc[0, 1](z)) / 6,
              -(np.power(mp.M * np.exp(-z), 2) * np.real(GB_nu_a[0](z)) * susc[0, 2](z)) / 6,
              (2 * 1j) * np.imag(GBt_nu_a[0, 0, 0](z)), (-2 * 1j) * np.imag(GBt_nu_a[0, 0, 1](z)),
