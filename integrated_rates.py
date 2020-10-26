@@ -3,6 +3,11 @@ import numpy as np
 from yukawasCI import FM
 from common import IntegratedRates
 
+"""
+Given the temp dependent rate coefficients and model parameters,
+construct the momentum-averaged rate matrices (as functions of z).
+"""
+
 def get_integrated_rates(mp, tc):
     '''
     :param mp: ModelParams
