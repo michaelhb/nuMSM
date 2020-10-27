@@ -2,20 +2,13 @@ import numpy as np
 from collections import namedtuple
 from integrated_rates import IntegratedRates
 
-'''
-Averaged equations state vector legend. 
-'''
-AveragedStateVector = namedtuple("AveragedStateVector",
-                                 ["n_delta_e", "n_delta_mu", "n_delta_tau",
-                                  "n_plus_11", "n_plus_22", "n_plus_12",
-                                  "n_minus_11", "n_minus_22", "n_minus_12"])
-
-def coefficient_matrix(z, rt, mp, suscT, SMData):
+def coefficient_matrix(z, rt, mp, suscT, smdata):
     '''
     :param z: integration coordinate z = ln(M/T)
-    :param rt: IntegratedRates
-    :param mp: ModelParams
+    :param rt: see common.IntegratedRates
+    :param mp: see common.ModelParams
     :param suscT: Suscepibility matrix (2,2) (function of T)
+    :param smdata: see common.SMData
 
     Ugliness = generated in Mathematica :)
     '''
@@ -25,7 +18,7 @@ def coefficient_matrix(z, rt, mp, suscT, SMData):
 
     #prefactor compensating for change of variables T -> z
     Mp = 1.22e19 # Planck mass
-    MpStar = Mp * np.sqrt(45.0 / (4 * np.pi ** 3 * SMData.geff(mp.M*np.exp(-z))))
+    MpStar = Mp * np.sqrt(45.0 / (4 * np.pi ** 3 * smdata.geff(mp.M * np.exp(-z))))
     jac = (MpStar*np.exp(-2*z))/(mp.M**2)
 
     return jac*np.array([[-(np.power(mp.M * np.exp(-z), 2) * np.real(GB_nu_a[0](z)) * susc[0, 0](z)) / 6,

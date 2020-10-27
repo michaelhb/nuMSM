@@ -4,6 +4,11 @@ Data structures and common utility functions
 from collections import namedtuple
 
 '''
+Sphaleron freeze out temperature
+'''
+Tsph = 131.7
+
+'''
 Each of these should be a function 
 of z == ln(M_N/T). 
 '''
@@ -44,3 +49,11 @@ Point in model parameter space (reals)
 ModelParams = namedtuple('ModelParams', [
     "M", "dM", "Imw", "Rew", "delta", "eta"
 ])
+
+'''
+Averaged equations state vector legend. 
+'''
+AveragedStateVector = namedtuple("AveragedStateVector",
+                                 ["n_delta_e", "n_delta_mu", "n_delta_tau",
+                                  "n_plus_11", "n_plus_12", "n_plus_22",
+                                  "n_minus_11", "n_minus_12", "n_minus_22"])
