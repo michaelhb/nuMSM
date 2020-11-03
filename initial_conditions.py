@@ -24,12 +24,13 @@ def get_initial_state(T0, smdata):
         n_delta_mu=0,
         n_delta_tau=0,
         n_plus_11=-(neq/s),
-        n_plus_12=0,
         n_plus_22=-(neq/s),
+        re_n_plus_12=0,
+        im_n_plus_12=0,
         n_minus_11=0,
-        n_minus_12=0,
-        n_minus_22=0
+        n_minus_22=0,
+        re_n_minus_12=0,
+        im_n_minus_12=0
     )
-
 
 
