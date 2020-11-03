@@ -1,0 +1,25 @@
+Steps used to produce Int_OrgH_MN10E-1_kcAve.dat:
+
+cd rates/Evo_LA_momentum_H_Gamma/Integration_OrgH3
+cp input.txt integration_points64.txt Int.sh MakeIntM.f Sub-Int_OrgH_Dec2019.f ../Integration_MB/
+
+contents of input.txt:
+1.0    0.0
+
+run ./Int.sh
+
+file is found in ../Sys/I_data/Int_OrgH_MN10E-1_kcAve.dat
+
+##########################################################
+
+Potential checks (where could things go wrong?)
+
+1. Coefficient matrix generation (i.e. in Mathematica)
+	a. The coefficients themselves
+	b. The conversion to python code
+
+2. Imported rates - are they correct?
+
+3. Initial conditions - am I doing this right?
+
+4. Other bugs in the code?

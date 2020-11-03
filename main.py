@@ -10,7 +10,6 @@ from integrated_rates import *
 from initial_conditions import *
 from averaged_equations import *
 
-
 """
 For now we'll just try to recreate the benchmark from Inar's notebook,
 with a single momentum mode (AFAIK this corresponds to the averaged system)
