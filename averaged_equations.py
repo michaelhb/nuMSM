@@ -75,16 +75,16 @@ def coefficient_matrix(z, rt, mp, suscT, smdata):
                     np.real(GBt_N_a[0, 0, 0]) * susc[0, 1] + np.real(GBt_N_a[1, 0, 0]) * susc[1, 1] + np.real(
                 GBt_N_a[2, 0, 0]) * susc[2, 1])) / 6, -(np.power(mp.M * np.exp(-z), 2) * (
                     np.real(GBt_N_a[0, 0, 0]) * susc[0, 2] + np.real(GBt_N_a[1, 0, 0]) * susc[1, 2] + np.real(
-                GBt_N_a[2, 0, 0]) * susc[2, 2])) / 6, 0, 0, 4 * np.imag(HB_N[0, 1]), -2 * np.imag(HB_N[0, 1]), -np.real(
-            HB_N[0, 0]), 0, -np.real(HB_N[0, 1]), -2 * np.real(HB_N[0, 1])], [-(np.power(mp.M * np.exp(-z), 2) * (
+                GBt_N_a[2, 0, 0]) * susc[2, 2])) / 6, 0, 0, 4 * np.imag(HB_N[0, 1]), -2 * np.imag(GB_N[0, 1]), -np.real(
+            GB_N[0, 0]), 0, -np.real(GB_N[0, 1]), -2 * np.real(HB_N[0, 1])], [-(np.power(mp.M * np.exp(-z), 2) * (
                     np.real(GBt_N_a[0, 1, 1]) * susc[0, 0] + np.real(GBt_N_a[1, 1, 1]) * susc[1, 0] + np.real(
                 GBt_N_a[2, 1, 1]) * susc[2, 0])) / 6, -(np.power(mp.M * np.exp(-z), 2) * (
                     np.real(GBt_N_a[0, 1, 1]) * susc[0, 1] + np.real(GBt_N_a[1, 1, 1]) * susc[1, 1] + np.real(
                 GBt_N_a[2, 1, 1]) * susc[2, 1])) / 6, -(np.power(mp.M * np.exp(-z), 2) * (
                     np.real(GBt_N_a[0, 1, 1]) * susc[0, 2] + np.real(GBt_N_a[1, 1, 1]) * susc[1, 2] + np.real(
-                GBt_N_a[2, 1, 1]) * susc[2, 2])) / 6, 0, 0, -4 * np.imag(HB_N[0, 1]), -2 * np.imag(HB_N[0, 1]), 0,
-                                                                              -np.real(HB_N[1, 1]),
-                                                                              -np.real(HB_N[0, 1]),
+                GBt_N_a[2, 1, 1]) * susc[2, 2])) / 6, 0, 0, -4 * np.imag(HB_N[0, 1]), -2 * np.imag(GB_N[0, 1]), 0,
+                                                                              -np.real(GB_N[1, 1]),
+                                                                              -np.real(GB_N[0, 1]),
                                                                               2 * np.real(HB_N[0, 1])], [-(
                     np.power(mp.M * np.exp(-z), 2) * (
                         np.real(GBt_N_a[0, 0, 1]) * susc[0, 0] + np.real(GBt_N_a[1, 0, 1]) * susc[1, 0] + np.real(
@@ -93,8 +93,8 @@ def coefficient_matrix(z, rt, mp, suscT, smdata):
                 GBt_N_a[2, 0, 1]) * susc[2, 1])) / 6, -(np.power(mp.M * np.exp(-z), 2) * (
                     np.real(GBt_N_a[0, 0, 1]) * susc[0, 2] + np.real(GBt_N_a[1, 0, 1]) * susc[1, 2] + np.real(
                 GBt_N_a[2, 0, 1]) * susc[2, 2])) / 6, -2 * np.imag(HB_N[0, 1]), 2 * np.imag(HB_N[0, 1]), 0, 0, -np.real(
-            HB_N[0, 1]) / 2, -np.real(HB_N[0, 1]) / 2, (-np.real(HB_N[0, 0]) - np.real(HB_N[1, 1])) / 2, np.real(
+            GB_N[0, 1]) / 2, -np.real(GB_N[0, 1]) / 2, (-np.real(GB_N[0, 0]) - np.real(GB_N[1, 1])) / 2, np.real(
             HB_N[0, 0]) - np.real(HB_N[1, 1])],
-                     [0, 0, 0, -np.imag(HB_N[0, 1]), -np.imag(HB_N[0, 1]), 0, 0, np.real(HB_N[0, 1]),
+                     [0, 0, 0, -np.imag(GB_N[0, 1]), -np.imag(GB_N[0, 1]), 0, 0, np.real(HB_N[0, 1]),
                       -np.real(HB_N[0, 1]), -np.real(HB_N[0, 0]) + np.real(HB_N[1, 1]),
-                      (-np.real(HB_N[0, 0]) - np.real(HB_N[1, 1])) / 2]])
+                      (-np.real(GB_N[0, 0]) - np.real(GB_N[1, 1])) / 2]])
