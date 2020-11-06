@@ -12,14 +12,32 @@ file is found in ../Sys/I_data/Int_OrgH_MN10E-1_kcAve.dat
 
 ##########################################################
 
+Steps used to produce LA_Evo_ModH.dat:
+
+cd rates/Evo_LA_momentum_H_Gamma
+mkdir Evo_MB/
+cp -rf Evo_ModH2/* Evo_MB/
+
+contents of input.txt:
+1 1 0 -12.0 1.0986122886681098 0.8125000000000001 1.8125 1.3749999999999998
+
+run ./Int.sh
+file is found in same dir
+
+##########################################################
+
 Potential checks (where could things go wrong?)
 
 1. Coefficient matrix generation (i.e. in Mathematica)
 	a. The coefficients themselves
-	b. The conversion to python code
+	b. The conversion to python code (*checked)
 
 2. Imported rates - are they correct?
 
 3. Initial conditions - am I doing this right?
 
 4. Other bugs in the code?
+
+Things to try:
+
+1. Can we try to do a solution in Mathematica?

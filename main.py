@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from os.path import expanduser
 
 from scipy.integrate import odeint
@@ -25,7 +26,6 @@ if __name__ == '__main__':
     Rew = 13 / 16 * np.pi
     delta = 29 / 16 * np.pi
     eta = 22 / 16 * np.pi
-
     mp = ModelParams(M, dM, Imw, Rew, delta, eta)
 
     # Load precomputed data files
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     zlist = np.linspace(z0, zF, 200)
 
     # Construct system of equations
-    # f_state = lambda x_dot, z: np.dot(coefficient_matrix(z, rates, mp, susc, sm_data), x_dot)
+    f_state = lambda x_dot, z: np.dot(coefficient_matrix(z, rates, mp, susc, sm_data), x_dot)
     def f_state(x_dot, z):
         return jacobian(z, mp, smdata)*(
             np.dot(coefficient_matrix(z, rates, mp, susc, smdata), x_dot) +
@@ -70,10 +70,13 @@ if __name__ == '__main__':
         return jacobian(z, mp, smdata)*coefficient_matrix(z, rates, mp, susc, smdata)
 
     # Solve them
-    sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-13, full_output=True)
+    sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-12, full_output=True)
     print(sol)
+
     # Plot stuff
     Tlist = Tz(zlist)
     plt.loglog(Tlist, np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2]))
     # plt.loglog(Tlist, np.abs(sol[0][:, 7]))
     plt.show()
+
+
