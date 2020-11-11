@@ -16,17 +16,63 @@ For now we'll just try to recreate the benchmark from Inar's notebook,
 with a single momentum mode (AFAIK this corresponds to the averaged system)
 """
 
+benchmarks = [
+    # From Inar's notebook
+    ModelParams(
+        M=1.0,
+        dM=1e-12,
+        Imw = np.log(3),
+        Rew = 13 / 16 * np.pi,
+        delta = 29 / 16 * np.pi,
+        eta = 22 / 16 * np.pi
+    ),
+    # From Table 4
+    ModelParams(
+        M=5.0000e-01,
+        dM=5.9794e-09,
+        Imw=5.3897e+00,
+        Rew=6.4803e-01*np.pi,
+        delta=1.8599e+00*np.pi,
+        eta=3.5291e-01*np.pi
+    ),
+    ModelParams(
+        M=1.0000e+00,
+        dM=5.3782e-09,
+        Imw=5.2607e+00,
+        Rew=8.3214e-01 * np.pi,
+        delta=1.2708e+00 * np.pi,
+        eta=1.7938e+00 * np.pi
+    ),
+    ModelParams(
+        M=2.0000e+00,
+        dM=3.0437e-09,
+        Imw=5.5435e+00,
+        Rew=1.6514e+00 * np.pi,
+        delta=1.6384e+00 * np.pi,
+        eta=7.5733e-01 * np.pi
+    ),
+    ModelParams(
+        M=5.0000e+00,
+        dM=1.7945e-09,
+        Imw=5.229e+00,
+        Rew=1.7753e+00  * np.pi,
+        delta=1.4481e+00 * np.pi,
+        eta=1.2070e+00 * np.pi
+    ),
+    ModelParams(
+        M=1.0000e+01,
+        dM=2.7660e-09,
+        Imw=4.4442e+00,
+        Rew=8.4146e-01 * np.pi,
+        delta=1.7963e+00 * np.pi,
+        eta=9.2261e-01 * np.pi
+    ),
+]
+
 if __name__ == '__main__':
 
     # Model parameters
-    M = 1.0  # HNLs mass
-    dM = 1e-12  # mass difference
-
-    Imw = np.log(3)
-    Rew = 13 / 16 * np.pi
-    delta = 29 / 16 * np.pi
-    eta = 22 / 16 * np.pi
-    mp = ModelParams(M, dM, Imw, Rew, delta, eta)
+    mp = benchmarks[0]
 
     # Load precomputed data files
     path_rates = expanduser("~/SciCodes/nuMSM/test_data/Int_OrgH_MN10E-1_kcAve.dat")
@@ -39,7 +85,7 @@ if __name__ == '__main__':
 
     # Change of variables
     def zT(T):
-        return np.log(M/T)
+        return np.log(mp.M/T)
 
     def Tz(z):
         return mp.M*np.exp(-z)
@@ -53,24 +99,23 @@ if __name__ == '__main__':
 
     # Integration bounds
     z0 = zT(T0)
-    zF = zT(10.)
+    zF = zT(100.)
 
     # Output grid
     zlist = np.linspace(z0, zF, 200)
 
     # Construct system of equations
-    f_state = lambda x_dot, z: np.dot(coefficient_matrix(z, rates, mp, susc, sm_data), x_dot)
     def f_state(x_dot, z):
         return jacobian(z, mp, smdata)*(
-            np.dot(coefficient_matrix(z, rates, mp, susc, smdata), x_dot) +
+            np.dot(coefficient_matrix(z, rates, mp, susc), x_dot) +
             inhomogeneous_part(z, rates)
         )
 
     def jac(x_dot, z):
-        return jacobian(z, mp, smdata)*coefficient_matrix(z, rates, mp, susc, smdata)
+        return jacobian(z, mp, smdata)*coefficient_matrix(z, rates, mp, susc)
 
     # Solve them
-    sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-12, full_output=True)
+    sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-13, full_output=True)
     print(sol)
 
     # Plot stuff

@@ -24,7 +24,7 @@ def inhomogeneous_part(z, rt):
     return np.array([0, 0, 0, -Seq[0, 0], -Seq[1, 1], 0, 0, 0, 0, 0, 0])
 
 
-def coefficient_matrix(z, rt, mp, suscT, smdata):
+def coefficient_matrix(z, rt, mp, suscT):
     '''
     :param z: integration coordinate z = ln(M/T)
     :param rt: see common.IntegratedRates
