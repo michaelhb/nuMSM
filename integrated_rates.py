@@ -48,7 +48,7 @@ def get_integrated_rates(mp, tc):
         return np.array([hhc[a]*(tc.nugp(Tz(z)) + tc.nugm(Tz(z))) for a in range(3)])
 
     def GammaBarTilde_nu_a(z):
-        return np.array([-tc.hnlgp(Tz(z))*YNplus[a].T + tc.hnlgm(Tz(z))*YNminus[a].T for a in range(3)])
+        return np.array([-tc.nugp(Tz(z))*YNplus[a].T + tc.nugm(Tz(z))*YNminus[a].T for a in range(3)])
 
     def HamiltonianBar_N(z):
         return mp.dM*np.array([[0,1],[1,0]])*tc.hnlh0(Tz(z)) \
@@ -59,7 +59,7 @@ def get_integrated_rates(mp, tc):
         return tc.hnlgp(Tz(z))*np.sum(YNplus, axis=0) + tc.hnlgm(Tz(z))*np.sum(YNminus, axis=0)
 
     def GammaBarTilde_N_a(z):
-        return np.array([-tc.nugp(Tz(z))*YNplus[a] + tc.nugm(Tz(z))*YNminus[a] for a in range(3)])
+        return np.array([-tc.hnlgp(Tz(z))*YNplus[a] + tc.hnlgm(Tz(z))*YNminus[a] for a in range(3)])
 
     def Seq(z):
         return tc.hnldeq(Tz(z))*np.identity(2)
