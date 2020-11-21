@@ -105,6 +105,13 @@ def coefficient_matrix(z, rt, mp, suscT):
     GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq = [R(z) for R in rt]
     susc = suscT(T)
 
+    # print("GB_nu_a", GB_nu_a*114421265882493.08)
+    # print("GBt_nu_a", GBt_nu_a*114421265882493.08)
+    # print("GBt_N_a", GBt_N_a*114421265882493.08)
+    # print("HB_N", HB_N*114421265882493.08)
+    # print("GB_N", GB_N*114421265882493.08)
+    # print("Seq", Seq*114421265882493.08)
+
     b11 = -gamma_omega(z, rt, susc)*(T**2)/6.
     b12 = 2j*tr_h(np.imag(GBt_nu_a))
     b13 = -tr_h(np.real(GBt_nu_a))
@@ -114,16 +121,6 @@ def coefficient_matrix(z, rt, mp, suscT):
     b31 = -Yr(z, rt, susc)*(T**2)/6.
     b32 = 2*Ch(np.imag(HB_N)) - 1j*Ah(np.imag(GB_N))
     b33 = -1j*Ch(np.real(HB_N)) - (1./2.)*Ah(np.real(GB_N))
-
-    # print("b11", b11)
-    # print("b12", b12)
-    # print("b13", b13)
-    # print("b21", b21)
-    # print("b22", b22)
-    # print("b23", b23)
-    # print("b31", b31)
-    # print("b32", b32)
-    # print("b33", b33)
 
     return np.real(np.block([
         [b11,b12,b13],

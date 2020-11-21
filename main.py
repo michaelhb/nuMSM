@@ -75,7 +75,7 @@ if __name__ == '__main__':
     mp = benchmarks[0]
 
     # Load precomputed data files
-    path_rates = expanduser("~/SciCodes/nuMSM/test_data/Int_OrgH_MN10E-1_kcAve.dat")
+    path_rates = expanduser("~/SciCodes/nuMSM/test_data/Int_ModH_MN10E-1_kcAve.dat")
     path_SMdata = expanduser("~/SciCodes/nuMSM/test_data/standardmodel.dat")
     path_suscept_data = expanduser("~/SciCodes/nuMSM/test_data/susceptibility.dat")
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     # Integration bounds
     z0 = zT(T0)
-    zF = zT(100.)
+    zF = zT(10.)
 
     # Output grid
     zlist = np.linspace(z0, zF, 200)
@@ -114,18 +114,18 @@ if __name__ == '__main__':
     def jac(x_dot, z):
         return jacobian(z, mp, smdata)*coefficient_matrix(z, rates, mp, susc)
 
-    z = np.log(mp.M/80.)
-    print(jacobian(z, mp, smdata))
-    print(jacobian(z, mp, smdata)*coefficient_matrix(z,rates,mp,susc))
+    # z = np.log(mp.M/80.)
+    # print(jacobian(z, mp, smdata))
+    # print(repr(jacobian(z, mp, smdata)*coefficient_matrix(z,rates,mp,susc)))
 
-    # # Solve them
-    # sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-6, atol=1e-13, full_output=True)
-    # print(sol)
-    #
-    # # Plot stuff
-    # Tlist = Tz(zlist)
-    # plt.loglog(Tlist, np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2]))
-    # # plt.loglog(Tlist, np.abs(sol[0][:, 7]))
-    # plt.show()
+    # Solve them
+    sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-6, atol=1e-13, full_output=True)
+    print(sol)
+
+    # Plot stuff
+    Tlist = Tz(zlist)
+    plt.loglog(Tlist, np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2]))
+    # plt.loglog(Tlist, np.abs(sol[0][:, 7]))
+    plt.show()
 
 

@@ -1,4 +1,5 @@
 from collections import namedtuple
+import sys
 import numpy as np
 from yukawasCI import FM
 from common import IntegratedRates
@@ -25,7 +26,7 @@ def get_integrated_rates(mp, tc):
 
     # a is the flavor index
     YNplus = np.array(
-        [[[h[a,1]*hc[a,1],-h[a,1]*hc[a,0]],
+        [[[h[a,1]*hc[a,1], -h[a,1]*hc[a,0]],
         [np.conj(- h[a,1]*hc[a,0]),h[a,0]*hc[a,0]]]
             for a in range(3)])
 
@@ -36,7 +37,7 @@ def get_integrated_rates(mp, tc):
 
     # Yukawa part of expression for Gamma_nu_alpha (6.3)
     hhc = np.array(
-        [h[a, 0] * hc[a, 0] + h[a, 1] * hc[a, 1]
+        [h[a,0]*hc[a,0] + h[a,1]*hc[a, 1]
          for a in range(3)])
 
     def Tz(z):
@@ -47,10 +48,10 @@ def get_integrated_rates(mp, tc):
         return np.array([hhc[a]*(tc.nugp(Tz(z)) + tc.nugm(Tz(z))) for a in range(3)])
 
     def GammaBarTilde_nu_a(z):
-        return np.array([-tc.hnlgp(Tz(z))*YNplus[a] + tc.hnlgm(Tz(z))*YNminus[a] for a in range(3)])
+        return np.array([-tc.hnlgp(Tz(z))*YNplus[a].T + tc.hnlgm(Tz(z))*YNminus[a].T for a in range(3)])
 
     def HamiltonianBar_N(z):
-        return -mp.delta*np.array([[0,1],[1,0]])*tc.hnlh0(Tz(z)) \
+        return mp.dM*np.array([[0,1],[1,0]])*tc.hnlh0(Tz(z)) \
             + tc.hnlhp(Tz(z))*np.sum(YNplus, axis=0) \
             + tc.hnlhm(Tz(z))*np.sum(YNminus, axis=0)
 
