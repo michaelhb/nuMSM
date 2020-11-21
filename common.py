@@ -55,5 +55,5 @@ Averaged equations state vector legend.
 '''
 AveragedStateVector = namedtuple("AveragedStateVector",
                                  ["n_delta_e", "n_delta_mu", "n_delta_tau",
-                                  "n_plus_11", "n_plus_22", "re_n_plus_12", "im_n_plus_12",
-                                  "n_minus_11", "n_minus_22", "re_n_minus_12", "im_n_minus_12"])
+                                  "rp_1", "rp_2", "rp_3", "rp_4",
+                                  "rm_1", "rm_2", "rm_3", "rm_4"])

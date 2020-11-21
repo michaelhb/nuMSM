@@ -114,14 +114,18 @@ if __name__ == '__main__':
     def jac(x_dot, z):
         return jacobian(z, mp, smdata)*coefficient_matrix(z, rates, mp, susc)
 
-    # Solve them
-    sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-13, full_output=True)
-    print(sol)
+    z = np.log(mp.M/80.)
+    print(jacobian(z, mp, smdata))
+    print(jacobian(z, mp, smdata)*coefficient_matrix(z,rates,mp,susc))
 
-    # Plot stuff
-    Tlist = Tz(zlist)
-    plt.loglog(Tlist, np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2]))
-    # plt.loglog(Tlist, np.abs(sol[0][:, 7]))
-    plt.show()
+    # # Solve them
+    # sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-6, atol=1e-13, full_output=True)
+    # print(sol)
+    #
+    # # Plot stuff
+    # Tlist = Tz(zlist)
+    # plt.loglog(Tlist, np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2]))
+    # # plt.loglog(Tlist, np.abs(sol[0][:, 7]))
+    # plt.show()
 
 

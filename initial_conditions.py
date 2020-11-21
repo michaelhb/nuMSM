@@ -1,4 +1,5 @@
 import numpy as np
+from averaged_equations import tau
 from common import AveragedStateVector
 
 def get_T0(mp):
@@ -19,18 +20,9 @@ def get_initial_state(T0, smdata):
     #entropy at T0
     s = smdata.s(T0)
 
-    return AveragedStateVector(
-        n_delta_e=0,
-        n_delta_mu=0,
-        n_delta_tau=0,
-        n_plus_11=-(neq/s),
-        n_plus_22=-(neq/s),
-        re_n_plus_12=0,
-        im_n_plus_12=0,
-        n_minus_11=0,
-        n_minus_22=0,
-        re_n_minus_12=0,
-        im_n_minus_12=0
-    )
+    n_plus0 = -np.identity(2)*neq/s
+    r_plus0 = np.einsum('kij,ji->k',tau,n_plus0)
+
+    return np.real(np.concatenate([[0,0,0],r_plus0,[0,0,0,0]]))
 
 
