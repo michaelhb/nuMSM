@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from collections import namedtuple
 from integrated_rates import IntegratedRates
 
@@ -24,10 +25,12 @@ Aijk = gen_Aijk()
 """Convert commutators and anticommutators to matrix multiplication."""
 
 def Ch(H):
-    return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
+    #    return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
+    return np.einsum('inm,mn,ijk->jk',tau,H,Cijk)
 
 def Ah(H):
-    return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
+    return np.einsum('inm,mn,ijk->jk',tau,H,Aijk)
+    # return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
 
 def tr_h(H_a):
     """
@@ -54,7 +57,7 @@ def Yr(z, rt, susc):
     :param rt: see common.ModelParams
     :return: (4,3) matrix appearing in the (3,1) block of the evolution matrix
     """
-    reGBt_nu_a = np.real(rt.GBt_nu_a(z))
+    reGBt_nu_a = np.real(rt.GBt_N_a(z))
     return np.einsum('kij,aji,ab->kb',tau,reGBt_nu_a,susc)
 
 def Yi(z, rt, susc):
@@ -63,7 +66,7 @@ def Yi(z, rt, susc):
     :param rt: see common.ModelParams
     :return: (4,3) matrix appearing in the (2,1) block of the evolution matrix
     """
-    imGBt_nu_a = np.imag(rt.GBt_nu_a(z))
+    imGBt_nu_a = np.imag(rt.GBt_N_a(z))
     return np.einsum('kij,aji,ab->kb',tau,imGBt_nu_a,susc)
 
 def jacobian(z, mp, smdata):
