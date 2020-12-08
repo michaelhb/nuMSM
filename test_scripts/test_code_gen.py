@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from common import *
 from load_precomputed import *
-from integrated_rates import *
+from rates import *
 from initial_conditions import *
 from averaged_equations import *
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         return mp.M*np.exp(-z)
 
     # Get integrated rates
-    rates = get_integrated_rates(mp, tc)
+    rates = get_rates(mp, tc)
 
     # Print rates at T_test
     for k, v in rates._asdict().items():

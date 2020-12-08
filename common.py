@@ -12,7 +12,7 @@ Tsph = 131.7
 Each of these should be a function 
 of z == ln(M_N/T). 
 '''
-IntegratedRates = namedtuple('IntegratedRates', [
+Rates = namedtuple('Rates', [
     "GB_nu_a", # (3)
     "GBt_nu_a", # (3,2,2)
     "GBt_N_a",  # (3,2,2)

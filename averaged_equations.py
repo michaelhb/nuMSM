@@ -1,7 +1,5 @@
 import numpy as np
 import sys
-from collections import namedtuple
-from integrated_rates import IntegratedRates
 
 """Basis of Hermitian generators"""
 tau = np.array([
@@ -25,12 +23,10 @@ Aijk = gen_Aijk()
 """Convert commutators and anticommutators to matrix multiplication."""
 
 def Ch(H):
-    #    return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
-    return np.einsum('inm,mn,ijk->jk',tau,H,Cijk)
+    return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
 
 def Ah(H):
-    return np.einsum('inm,mn,ijk->jk',tau,H,Aijk)
-    # return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
+    return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
 
 def tr_h(H_a):
     """
@@ -107,13 +103,6 @@ def coefficient_matrix(z, rt, mp, suscT):
     T = mp.M * np.exp(-z)
     GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq = [R(z) for R in rt]
     susc = suscT(T)
-
-    # print("GB_nu_a", GB_nu_a*114421265882493.08)
-    # print("GBt_nu_a", GBt_nu_a*114421265882493.08)
-    # print("GBt_N_a", GBt_N_a*114421265882493.08)
-    # print("HB_N", HB_N*114421265882493.08)
-    # print("GB_N", GB_N*114421265882493.08)
-    # print("Seq", Seq*114421265882493.08)
 
     b11 = -gamma_omega(z, rt, susc)*(T**2)/6.
     b12 = 2j*tr_h(np.imag(GBt_nu_a))

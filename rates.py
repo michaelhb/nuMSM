@@ -1,15 +1,13 @@
-from collections import namedtuple
-import sys
 import numpy as np
 from yukawasCI import FM
-from common import IntegratedRates
+from common import Rates
 
 """
 Given the temp dependent rate coefficients and model parameters,
 construct the momentum-averaged rate matrices (as functions of z).
 """
 
-def get_integrated_rates(mp, tc):
+def get_rates(mp, tc):
     '''
     :param mp: ModelParams
     :param tc: TDependentRateCoeffs
@@ -64,7 +62,7 @@ def get_integrated_rates(mp, tc):
     def Seq(z):
         return tc.hnldeq(Tz(z))*np.identity(2)
 
-    return IntegratedRates(
+    return Rates(
         GammaBar_nu_a,
         GammaBarTilde_nu_a,
         GammaBarTilde_N_a,
