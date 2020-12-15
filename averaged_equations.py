@@ -1,40 +1,15 @@
 import numpy as np
 import sys
 
-"""Basis of Hermitian generators"""
-tau = np.array([
-    [[1,0],[0,0]],
-    [[0,0],[0,1]],
-    (1./np.sqrt(2))*np.array([[0,1],[1,0]]),
-    (1./np.sqrt(2))*np.array([[0,1j],[-1j,0]])
-])
+from common import *
 
-"""Structure constants for commutators and anticommutators"""
-def gen_Cijk():
-    return 1j*np.imag(np.einsum('iab,jbc,kca->ijk',2*tau, tau, tau))
-
-def gen_Aijk():
-    return np.real(np.einsum('iab,jbc,kca->ijk',2*tau, tau, tau))
-
-# Generate on module load
-Cijk = gen_Cijk()
-Aijk = gen_Aijk()
-
-"""Convert commutators and anticommutators to matrix multiplication."""
-
-def Ch(H):
-    return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
-
-def Ah(H):
-    return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
-
-def tr_h(H_a):
-    """
-    :param H_a: a (3,2,2) tensor; the first index being flavor, and the last two
-        Hermitian or skew-Hermitian.
-    :return: (3,4) matrix X_ai = Tr[tau_i.H_a].
-    """
-    return np.einsum('ijk,akj->ai',tau,H_a)
+'''
+Averaged equations state vector legend (just for documentation purposes...)
+'''
+AveragedStateVector = namedtuple("AveragedStateVector",
+                                 ["n_delta_e", "n_delta_mu", "n_delta_tau",
+                                  "rp_1", "rp_2", "rp_3", "rp_4",
+                                  "rm_1", "rm_2", "rm_3", "rm_4"])
 
 def gamma_omega(z, rt, susc):
     """
@@ -65,30 +40,14 @@ def Yi(z, rt, susc):
     imGBt_nu_a = np.imag(rt.GBt_N_a(z))
     return np.einsum('kij,aji,ab->kb',tau,imGBt_nu_a,susc)
 
-def jacobian(z, mp, smdata):
-    """
-    :param z: integration coordinate z = ln(M/T)
-    :param mp: see common.ModelParams
-    :param smdata: see common.SMData
-    :return: jacobian for transformation T -> Z
-    """
-    Mp = 1.22e19  # Planck mass
-    T = mp.M*np.exp(-z)
-    geff = smdata.geff(T)
-    MpStar = Mp*np.sqrt(45.0/(4*np.pi**3*geff))
-    return MpStar/(T**2)
-
-    # MpStar = Mp * np.sqrt(45.0 / (4*(np.pi**3)*smdata.geff(mp.M * np.exp(-z))))
-    # return (MpStar * np.exp(-2 * z)) / (mp.M ** 2)
-
 def inhomogeneous_part(z, rt):
     """
     :param rt: see common.IntegratedRates
     :return: inhomogeneous part of the ODE system
     """
     Seq = rt.Seq(z)
-    seq = np.einsum('kij,ji->k',tau,Seq)
-    return np.real(np.concatenate([[0,0,0],-seq,[0,0,0,0]]))
+    seq = np.einsum('kij,ji->k', tau, Seq)
+    return np.real(np.concatenate([[0, 0, 0], -seq, [0, 0, 0, 0]]))
 
 def coefficient_matrix(z, rt, mp, suscT):
     '''

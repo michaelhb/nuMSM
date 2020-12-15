@@ -1,6 +1,7 @@
 import numpy as np
 from averaged_equations import tau
-from common import AveragedStateVector
+
+zeta3 = 1.20206
 
 def get_T0(mp):
     '''
@@ -11,9 +12,7 @@ def get_T0(mp):
     Tosc = (0.304 * mp.M * mp.dM * M0) ** (1 / 3.0)
     return max(1000.0, 10 * Tosc)
 
-def get_initial_state(T0, smdata):
-    zeta3 = 1.20206
-
+def get_initial_state_avg(T0, smdata):
     #equilibrium number density for a relativistic fermion, T = T0
     neq = (3.*zeta3*(T0**3))/(4*(np.pi**2))
 

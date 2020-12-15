@@ -92,7 +92,7 @@ def run_test():
 
     # Get initial conditions
     T0 = get_T0(mp)
-    initial_state = get_initial_state(T0, smdata)
+    initial_state = get_initial_state_avg(T0, smdata)
 
     # Integration bounds
     z0 = zT(T0)
@@ -103,6 +103,7 @@ def run_test():
 
     # Construct system of equations
     def f_state(x_dot, z):
+        print(inhomogeneous_part(z, rates))
         return jacobian(z, mp, smdata)*(
             np.dot(coefficient_matrix(z, rates, mp, susc), x_dot) +
             inhomogeneous_part(z, rates)
