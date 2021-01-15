@@ -35,6 +35,14 @@ def get_T0(mp):
     Tosc = (0.304 * mp.M * mp.dM * M0) ** (1 / 3.0)
     return max(1000.0, 10 * Tosc)
 
+# Equilibrium distribution for SM neutrinos
+def f_nu(kc):
+    return 1.0/(np.exp(kc) + 1)
+
+# Equilibrium distribution for HNLs
+def f_N(T, mp, kc):
+    return 1.0/(np.exp(np.sqrt(mp.M**2 + (T**2)*(kc**2))/T) + 1.0)
+
 '''
 Factor arising from the change of variables T -> z
 '''
