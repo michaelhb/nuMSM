@@ -3,6 +3,19 @@ import sys
 
 from common import *
 
+def get_initial_state_avg(T0, smdata):
+
+    #equilibrium number density for a relativistic fermion, T = T0
+    neq = (3.*zeta3*(T0**3))/(4*(np.pi**2))
+
+    #entropy at T0
+    s = smdata.s(T0)
+
+    n_plus0 = -np.identity(2)*neq/s
+    r_plus0 = np.einsum('kij,ji->k',tau,n_plus0)
+
+    return np.real(np.concatenate([[0,0,0],r_plus0,[0,0,0,0]]))
+
 '''
 Averaged equations state vector legend (just for documentation purposes...)
 '''

@@ -6,9 +6,9 @@ def get_rate_coefficients(path):
     '''
     :param path: Path to file containing tabulated temp
         dependent rate coefficients
-    :return: TDependentRateCoeffs tuple containing the
-        interpolated values as a function of T
-    '''
+        :return: TDependentRateCoeffs tuple containing the
+            interpolated values as a function of T
+        '''
 
     T, nugp, nugm, hnlgp, hnlgm, hnlhp, hnlhm, hnlh0, hnldeq = np.loadtxt(path).T
 

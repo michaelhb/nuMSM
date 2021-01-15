@@ -10,6 +10,9 @@ Sphaleron freeze out temperature
 '''
 Tsph = 131.7
 
+''' riemann zeta(3) '''
+zeta3 = 1.20206
+
 '''
 Each of these should be a function 
 of z == ln(M_N/T). 
@@ -22,6 +25,15 @@ Rates = namedtuple('Rates', [
     "GB_N", # (2,2)
     "Seq" # (2,2)
 ])
+
+def get_T0(mp):
+    '''
+    :param mp: see common.ModelParams
+    :return: Appropriate initial temp to begin integration
+    '''
+    M0 = 7.16e17
+    Tosc = (0.304 * mp.M * mp.dM * M0) ** (1 / 3.0)
+    return max(1000.0, 10 * Tosc)
 
 '''
 Factor arising from the change of variables T -> z
@@ -37,7 +49,8 @@ def jacobian(z, mp, smdata):
     T = mp.M*np.exp(-z)
     geff = smdata.geff(T)
     MpStar = Mp*np.sqrt(45.0/(4*np.pi**3*geff))
-    return MpStar/(T**2)
+    res = MpStar/(T**2)
+    return res
 
 '''
 These are the (interpolated) temperature dependent coefficients 

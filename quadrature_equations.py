@@ -9,9 +9,29 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
     "kc_list", "weights", "rates"
 ])
 
-# Equilibrium distribution for neutrinos
+# Equilibrium distribution for SM neutrinos
 def f_nu(kc):
     return 1.0/(np.exp(kc) + 1)
+
+# Equilibrium distribution for HNLs
+def f_N(T, mp, kc):
+    return 1.0/(np.exp(np.sqrt(mp.M**2 + (T**2)*(kc**2))/T) + 1.0)
+
+# Initial condition
+def get_initial_state_quad(T0, mp, smdata, kc_list):
+    x0 = [0, 0, 0]
+    s = smdata.s(T0)
+
+    for kc in kc_list:
+        rho0 = -1*f_N(T0, mp, kc)*np.identity(2)/s
+        # rho0 = -((kc*T0)**3)*f_N(T0, mp, kc)*np.identity(2)/s
+        r0 = np.einsum('kij,ji->k', tau, rho0)
+        x0.extend(r0)
+        x0.extend(r0)
+
+    print(np.real(x0))
+
+    return np.real(x0)
 
 # same as in the averaged solver
 def gamma_omega(z, rt, susc):
@@ -30,26 +50,23 @@ def gamma_N(z, kc, rt, mp, susc, conj=False):
     G_N = np.conj(rt.GBt_N_a(z)) if conj else rt.GBt_N_a(z)
     return (1.0/T)*f_nu(kc)*(1-f_nu(kc))*np.einsum('kij,aji,ab->kb', tau, G_N, susc(T))
 
-def f_N(T, mp, kc):
-    return 1.0/(np.exp(np.sqrt(mp.M**2 + ((T**2)*(kc**2)))/T) + 1.0)
-
-def inhomogeneous_part(z, quad, mp, smdata):
-    T = mp.M * np.exp(-z)
-    s = smdata.s(T)
-
-    b = [np.array([0, 0, 0])]
-    n_kc = len(quad.kc_list)
-
-    for i in range(n_kc):
-        kc = quad.kc_list[i]
-        rt = quad.rates[i]
-        f_Nkc = f_N(T, mp, kc)
-        r_eq = np.array([f_Nkc, f_Nkc, 0, 0])
-        g_N = rt.GB_N(z)
-        b.append(0.5*np.dot(Ah(g_N), r_eq))
-        b.append(0.5*np.dot(Ah(np.conj(g_N)), r_eq))
-
-    return np.real(np.concatenate(b))
+# def inhomogeneous_part(z, quad, mp, smdata):
+#     T = mp.M * np.exp(-z)
+#     s = smdata.s(T)
+#
+#     b = [np.array([0, 0, 0])]
+#     n_kc = len(quad.kc_list)
+#
+#     for i in range(n_kc):
+#         kc = quad.kc_list[i]
+#         rt = quad.rates[i]
+#         f_Nkc = f_N(T, mp, kc)
+#         r_eq = np.array([f_Nkc, f_Nkc, 0, 0])
+#         g_N = rt.GB_N(z)
+#         b.append(0.5*np.dot(Ah(g_N), r_eq))
+#         b.append(0.5*np.dot(Ah(np.conj(g_N)), r_eq))
+#
+#     return np.real(np.concatenate(b))
 
 def coefficient_matrix(z, quad, rt_avg, mp, susc):
     T = mp.M * np.exp(-z)

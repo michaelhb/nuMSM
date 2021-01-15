@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from common import *
 from load_precomputed import *
 from rates import *
-from initial_conditions import *
 from averaged_equations import *
 
 """
@@ -52,9 +51,9 @@ benchmarks = [
         M=5.0000e+00,
         dM=1.7945e-09,
         Imw=5.229e+00,
-        Rew=1.7753e+00  * np.pi,
+        Rew=1.7753e+00 * np.pi,
         delta=1.4481e+00 * np.pi,
-        eta=1.2070e+00 * np.pi
+        eta=1.2070e+00 * np.pi              
     ),
     ModelParams(
         M=1.0000e+01,
@@ -103,7 +102,6 @@ def run_test():
 
     # Construct system of equations
     def f_state(x_dot, z):
-        print(inhomogeneous_part(z, rates))
         return jacobian(z, mp, smdata)*(
             np.dot(coefficient_matrix(z, rates, mp, susc), x_dot) +
             inhomogeneous_part(z, rates)

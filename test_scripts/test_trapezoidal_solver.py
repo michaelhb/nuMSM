@@ -1,23 +1,33 @@
 from os import path
+import sys
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-from initial_conditions import get_T0
 from rates import get_rates
 from quadrature_equations import *
 from load_precomputed import *
+from common import get_T0
 
+# mp = ModelParams(
+#     M=1.0,
+#     dM=1e-12,
+#     Imw=np.log(3),
+#     Rew=13 / 16 * np.pi,
+#     delta=29 / 16 * np.pi,
+#     eta=22 / 16 * np.pi
+# )
 mp = ModelParams(
     M=1.0,
-    dM=1e-12,
+    dM=1e-11,
     Imw=np.log(3),
-    Rew=13 / 16 * np.pi,
-    delta=29 / 16 * np.pi,
-    eta=22 / 16 * np.pi
+    Rew=1/4 * np.pi,
+    delta= np.pi,
+    eta=3/2 * np.pi
 )
 
 kc_list = [0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
            3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0]
 # kc_list = [0.5, 1.0, 2.5, 5.0, 10.0]
+# kc_list = [2.1, 3.1]
 
 # Change of variables
 def zT(T):
@@ -61,11 +71,19 @@ def run_test():
 
     # Set up initial conditions
     T0 = get_T0(mp)
-    initial_state = [0]*(3 + 8*len(kc_list))
+    # initial_state = [0]*(3 + 8*len(kc_list))
+    initial_state = get_initial_state_quad(T0, mp, smdata, kc_list)
 
     # Integration bounds
     z0 = zT(T0)
     zF = zT(10.)
+
+    # For testing: plot geff over temp range
+    # tic = np.linspace(z0, zF, 200)
+    # geff_x = [Tz(ztick) for ztick in tic]
+    # geff_plot = [smdata.geff(T) for T in geff_x]
+    # plt.plot(geff_x, geff_plot)
+    # plt.show()
 
     # Output grid
     zlist = np.linspace(z0, zF, 200)
@@ -74,15 +92,12 @@ def run_test():
     def f_state(x_dot, z):
         # print(inhomogeneous_part(z, quad, mp, smdata))
         # res = jacobian(z, mp, smdata)*(
-        #     np.dot(coefficient_matrix(z, quad, rt_avg, mp, susc), x_dot) +
+        #     np.dot(coefficient_matrix(z, quad, rt_avg, mp, susc), x_dot) -
         #         inhomogeneous_part(z, quad, mp, smdata)
         # )
 
-        # This seems to work better - but why?? The inhomogeneous part **should** be
-        # multiplied by the jacobian, right?
         res = jacobian(z, mp, smdata) * (
-                np.dot(coefficient_matrix(z, quad, rt_avg, mp, susc), x_dot)) + \
-                inhomogeneous_part(z, quad, mp, smdata)
+                np.dot(coefficient_matrix(z, quad, rt_avg, mp, susc), x_dot))
 
         return res
 
@@ -102,7 +117,7 @@ def run_test():
     for i in range(3):
         plt.loglog(Tlist, np.abs(sol[0][:, i]))
     plt.show()
-
+    #
     for i in range(len(2*kc_list)):
         plt.loglog(Tlist, np.abs(sol[0][:, 3 + i]))
     plt.show()
