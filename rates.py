@@ -7,15 +7,16 @@ Given the temp dependent rate coefficients and model parameters,
 construct the momentum-averaged rate matrices (as functions of z).
 """
 
-def get_rates(mp, tc):
+def get_rates(mp, tc, H = 1):
     '''
     :param mp: ModelParams
     :param tc: TDependentRateCoeffs
+    :param H: NH (H = 1) or IH (H = 2)
     :return: IntegratedRates
     '''
 
     # Get the Yukawas
-    Fmb = FM(mp.M, mp.dM, mp.Imw, mp.Rew, mp.delta, mp.eta)
+    Fmb = FM(mp.M, mp.dM, mp.Imw, mp.Rew, mp.delta, mp.eta, H)
 
     # Construct the Y-matrices (6.9 in 1808.10833)
     UNt = 1 / np.sqrt(2) * np.array([[-1j, 1j], [1, 1]])

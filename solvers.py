@@ -7,13 +7,17 @@ from load_precomputed import *
 from rates import get_rates
 from os import path
 
+ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-13}
+
 class Solver(ABC):
 
-    def __init__(self, model_params, T0, TF):
+    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
         self.T0 = T0
         self.TF = TF
         self.mp = model_params
         self._total_asymmetry = None
+        self.H = H
+        self.ode_pars = ode_pars
         super().__init__()
 
     @abstractmethod
@@ -30,6 +34,12 @@ class Solver(ABC):
         plt.loglog(Tlist, self._total_asymmetry)
         plt.show()
 
+    def get_final_asymmetry(self):
+        return self._total_asymmetry[-1]
+
+    def get_total_asymmetry(self):
+        return self._total_asymmetry
+
     # Change of variables
     def zT(self, T):
         return np.log(self.mp.M/T)
@@ -39,8 +49,8 @@ class Solver(ABC):
 
 class AveragedSolver(Solver):
 
-    def __init__(self, model_params, T0, TF):
-        super().__init__(model_params, T0, TF)
+    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
+        super().__init__(model_params, T0, TF, H, ode_pars)
 
         # Load precomputed data files
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -51,7 +61,7 @@ class AveragedSolver(Solver):
         self.tc = get_rate_coefficients(path_rates)
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
-        self.rates = get_rates(self.mp, self.tc)
+        self.rates = get_rates(self.mp, self.tc, self.H)
 
     def solve(self):
 
@@ -77,11 +87,8 @@ class AveragedSolver(Solver):
             return jacobian(z, self.mp, self.smdata)*self.coefficient_matrix(z, self.rates, self.mp, self.susc)
 
         # Solve them
-        sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-6, atol=1e-13, full_output=True)
+        sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
         self._total_asymmetry = np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2])
-
-    def get_total_asymmetry(self, T):
-        return self.total_asymmetry(T)
 
     def get_initial_state_avg(self, T0, smdata):
         #equilibrium number density for a relativistic fermion, T = T0
@@ -163,6 +170,10 @@ class AveragedSolver(Solver):
             [b31,b32,b33]
         ]))
 
+"""
+Data type to describe a quadrature scheme, incl. the list of 
+momenta points, weights and rates.
+"""
 QuadratureInputs = namedtuple("QuadratureInputs", [
     "kc_list", "weights", "rates"
 ])
@@ -170,6 +181,7 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 class QuadratureSolver:
     """
     Helper class for solvers implementing quadrature over momentum.
+    TODO: Move more things from TrapezoidalSolver into this class...
     """
     # Initial condition
     def get_initial_state_quad(self, T0, mp, smdata, kc_list):
@@ -205,7 +217,6 @@ class QuadratureSolver:
         T = mp.M * np.exp(-z)
 
         # Top left block, only part that doesn't depend on kc.
-        # g_nu = gamma_nu(z, quad, mp, susc)
         g_nu = -self.gamma_omega(z, rt_avg, susc(T))*(T**2)/6.
 
         top_row = []
@@ -245,7 +256,7 @@ class QuadratureSolver:
 
 class TrapezoidalSolver(Solver, QuadratureSolver):
 
-    def __init__(self, model_params, T0, TF):
+    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
         self.kc_list = [0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0]
 
@@ -258,7 +269,7 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
             fname = 'rates/Int_ModH_MN10E-1_kc{}E-1.dat'.format(int(kc * 10))
             path_rates = path.join(test_data, fname)
             tc = get_rate_coefficients(path_rates)
-            self.rates.append(get_rates(self.mp, tc))
+            self.rates.append(get_rates(self.mp, tc, H))
 
         # Load averaged rates for lepton-lepton part
         path_rates = path.join(test_data, "rates/Int_ModH_MN10E-1_kcAve.dat")
@@ -271,7 +282,7 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
 
-        Solver.__init__(self, model_params, T0, TF)
+        Solver.__init__(self, model_params, T0, TF, H, ode_pars)
 
     def quad_weights(self, points):
         weights = [0.5 * (points[1] - points[0])]
@@ -305,7 +316,8 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
                    self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc)
 
         # Solve them
-        sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-13, full_output=True)
+        # sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-13, full_output=True)
+        sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
 
         self._total_asymmetry = np.abs(sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2])
 
