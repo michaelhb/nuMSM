@@ -7,7 +7,7 @@ from load_precomputed import *
 from rates import get_rates
 from os import path
 
-ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-13}
+ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
 
 class Solver(ABC):
 
@@ -233,8 +233,10 @@ class QuadratureSolver:
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq = [R(z) for R in rt]
 
             # Top row
-            top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
-            top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
+            # top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
+            # top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
+            top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
+            top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
 
             # Left column
             g_N = self.gamma_N(z, kc, rt, mp, susc)
