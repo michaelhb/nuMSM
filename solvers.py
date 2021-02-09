@@ -6,6 +6,10 @@ from common import *
 from load_precomputed import *
 from rates import get_rates
 from os import path
+from scipy.sparse import coo_matrix, csr_matrix, csc_matrix
+from scikits.odes import ode
+from scipy.integrate import solve_ivp
+import sys
 
 ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
 
@@ -89,6 +93,39 @@ class AveragedSolver(Solver):
         # Solve them
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
         self._total_asymmetry = np.abs(sol[0][:,0] + sol[0][:,1] + sol[0][:,2])
+
+    #CVODES
+    # def solve(self):
+    #
+    #     # Get initial conditions
+    #     initial_state = self.get_initial_state_avg(self.T0, self.smdata)
+    #
+    #     # Integration bounds
+    #     z0 = self.zT(self.T0)
+    #     zF = self.zT(self.TF)
+    #
+    #     # Output grid
+    #     zlist = np.linspace(z0, zF, 200)
+    #     tlist = self.Tz(zlist)
+    #
+    #     # Construct system of equations
+    #     def rhseqn(z, x, xdot):
+    #         xdot[:] = jacobian(z, self.mp, self.smdata)*(
+    #             np.dot(self.coefficient_matrix(z, self.rates, self.mp, self.susc), x) +
+    #             self.inhomogeneous_part(z, self.rates)
+    #         )
+    #         return 0
+    #
+    #     def jac(z, x, fx, J):
+    #         J[:][:] = jacobian(z, self.mp, self.smdata)*self.coefficient_matrix(z, self.rates, self.mp, self.susc)
+    #         return 0
+    #
+    #     solver = ode('dopri5', rhseqn, jacfn=jac, rtol=1e-13, atol=1e-13, old_api=False)
+    #     res = solver.solve(zlist, initial_state)
+    #     print(res)
+    #     sol = res.values.y
+    #
+    #     self._total_asymmetry = np.abs(sol[:, 0] + sol[:, 1] + sol[:, 2])
 
     def get_initial_state_avg(self, T0, smdata):
         #equilibrium number density for a relativistic fermion, T = T0
@@ -213,6 +250,55 @@ class QuadratureSolver:
         G_N = np.conj(rt.GBt_N_a(z)) if conj else rt.GBt_N_a(z)
         return (1.0/T)*f_nu(kc)*(1-f_nu(kc))*np.einsum('kij,aji,ab->kb', tau, G_N, susc(T))
 
+    def _get_matrix_triples(self, M, row_offset, col_offset):
+        n_row, n_col = M.shape
+        row = []
+        col = []
+        data = []
+        for r in range(n_row):
+            for c in range(n_col):
+                row.append(r + row_offset)
+                col.append(c + col_offset)
+                data.append(M[r][c])
+        return row, col, data
+
+    def _make_sparse(self, n_kc, g_nu, top_row, left_col, diag):
+        row, col, data = self._get_matrix_triples(g_nu, 0, 0)
+
+        # Top row (3,4) blocks
+        col_offset = 3
+        for i in range(n_kc*2):
+            block = top_row[i]
+            r, c, d = self._get_matrix_triples(block, 0, col_offset)
+            row.extend(r)
+            col.extend(c)
+            data.extend(d)
+            col_offset += 4
+
+        # Left row (4,3) blocks
+        row_offset = 3
+        for i in range(n_kc*2):
+            block = left_col[i]
+            r, c, d = self._get_matrix_triples(block, row_offset, 0)
+            row.extend(r)
+            col.extend(c)
+            data.extend(d)
+            row_offset += 4
+
+        # Diagonals (4,4) blocks
+        row_offset = 3
+        col_offset = 3
+        for i in range(n_kc*2):
+            block = diag[i]
+            r, c, d = self._get_matrix_triples(block, row_offset, col_offset)
+            row.extend(r)
+            col.extend(c)
+            data.extend(d)
+            row_offset += 4
+            col_offset += 4
+
+        return csr_matrix(coo_matrix((np.real(data), (np.real(row), np.real(col),))))
+
     def coefficient_matrix(self, z, quad, rt_avg, mp, susc):
         T = mp.M * np.exp(-z)
 
@@ -248,13 +334,12 @@ class QuadratureSolver:
             diag.append(-1j*Ch(HB_N) - 0.5*Ah(GB_N))
             diag.append(-1j*Ch(np.conj(HB_N)) - 0.5*Ah(np.conj(GB_N)))
 
-        # Construct the full matrix. Not using a sparse format yet, but should think
-        # about it...
-
-        return np.real(np.block([
-            [g_nu, np.hstack(top_row)],
-            [np.vstack(left_col), block_diag(*diag)]
-        ]))
+        sparse = self._make_sparse(n_kc, g_nu, top_row, left_col, diag)
+        return sparse
+        # return np.real(np.block([
+        #     [g_nu, np.hstack(top_row)],
+        #     [np.vstack(left_col), block_diag(*diag)]
+        # ]))
 
 class TrapezoidalSolver(Solver, QuadratureSolver):
 
@@ -295,6 +380,44 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
         weights.append(0.5 * (points[-1] - points[-2]))
         return weights
 
+    # # CVODE VERSION
+    # def solve(self):
+    #
+    #     quad = QuadratureInputs(self.kc_list, self.quad_weights(self.kc_list), self.rates)
+    #     initial_state = self.get_initial_state_quad(self.T0, self.mp, self.smdata, self.kc_list)
+    #
+    #     # Integration bounds
+    #     z0 = self.zT(self.T0)
+    #     zF = self.zT(self.TF)
+    #
+    #     # Output grid
+    #     zlist = np.linspace(z0, zF, 200)
+    #
+    #     def rhseqn(z, x, xdot):
+    #         # print("rhseqn")
+    #         xdot[:] = jacobian(z, self.mp, self.smdata) * (
+    #             self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).dot(x))
+    #         return 0
+    #
+    #     def jacfn(z, x, fx, J):
+    #         # print("jacfn")
+    #         J[:][:] = jacobian(z, self.mp, self.smdata) * (
+    #             self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).todense())
+    #         return 0
+    #
+    #     def jac_times_vecfn(v, Jv, z, x, user_data):
+    #         print("jac_times_vecfn")
+    #         Jv[:] = jacobian(z, self.mp, self.smdata) * (
+    #             self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).dot(v))
+    #
+    #     solver = ode('cvode', rhseqn, jacfn=jacfn, rtol=1e-13, atol=1e-13, old_api=False)
+    #     res = solver.solve(zlist, initial_state)
+    #     print(res)
+    #     sol = res.values.y
+    #
+    #     self._total_asymmetry = np.abs(sol[:, 0] + sol[:, 1] + sol[:, 2])
+
+    # ODEINT VERSION
     def solve(self):
 
         quad = QuadratureInputs(self.kc_list, self.quad_weights(self.kc_list), self.rates)
@@ -310,16 +433,47 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
         # Construct system of equations
         def f_state(x_dot, z):
             res = jacobian(z, self.mp, self.smdata) * (
-                np.dot(self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc), x_dot))
+                self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).dot(x_dot))
             return res
 
         def jac(x_dot, z):
             return jacobian(z, self.mp, self.smdata) * \
-                   self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc)
+                   self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).todense()
 
         # Solve them
-        # sol = odeint(f_state, initial_state, zlist, Dfun=jac, rtol=1e-7, atol=1e-13, full_output=True)
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
+        np.set_printoptions(threshold=np.inf)
+        print(sol[0])
 
         self._total_asymmetry = np.abs(sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2])
 
+# SOLVE_IVP VERSION
+#     def solve(self):
+#         quad = QuadratureInputs(self.kc_list, self.quad_weights(self.kc_list), self.rates)
+#         initial_state = self.get_initial_state_quad(self.T0, self.mp, self.smdata, self.kc_list)
+#
+#         # Integration bounds
+#         z0 = self.zT(self.T0)
+#         zF = self.zT(self.TF)
+#
+#         # Output grid
+#         zlist = np.linspace(z0, zF, 200)
+#
+#         # Construct system of equations
+#         def f_state(z, x):
+#             res = jacobian(z, self.mp, self.smdata) * (
+#                 self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).dot(x))
+#             return res
+#
+#         def f_jac(z, x):
+#             return jacobian(z, self.mp, self.smdata) * \
+#                    self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc)
+#
+#         # Solve them
+#         sol = solve_ivp(f_state, (z0, zF), y0=initial_state, method="BDF", t_eval=zlist,
+#                         jac=f_jac, atol=1e-13, rtol=1e-13)
+#         # np.set_printoptions(threshold=np.inf)
+#         # print(sol.y)
+#         print(sol)
+#
+#         self._total_asymmetry = np.abs(sol.y[0] + sol.y[1] + sol.y[2])
