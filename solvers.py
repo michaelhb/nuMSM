@@ -319,10 +319,10 @@ class QuadratureSolver:
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq = [R(z) for R in rt]
 
             # Top row
-            # top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
-            # top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
-            top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
-            top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
+            top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
+            top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
+            # top_row.append(w_i*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
+            # top_row.append(-w_i*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
 
             # Left column
             g_N = self.gamma_N(z, kc, rt, mp, susc)
@@ -344,8 +344,17 @@ class QuadratureSolver:
 class TrapezoidalSolver(Solver, QuadratureSolver):
 
     def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
-        self.kc_list = [0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
-                3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0]
+        # self.kc_list = [0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
+        #         3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0]
+        # self.kc_list = [0.1 * kc for kc in
+        #  [5, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+        #   36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63,
+        #   65, 67, 69, 71, 74, 78, 84, 93, 100]]
+        # self.kc_list = [0.1*kc for kc in range(30,101)]
+        self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
+        # self.kc_list = [0.1, 0.2, 0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
+
+        print("Using {} modes".format(len(self.kc_list)))
 
         self.mp = model_params
         self.rates = []
@@ -354,12 +363,14 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
 
         for kc in self.kc_list:
             fname = 'rates/Int_ModH_MN10E-1_kc{}E-1.dat'.format(int(kc * 10))
+            # fname = 'rates/Int_OrgH_MN10E-1_kc{}E-1.dat'.format(int(kc * 10))
             path_rates = path.join(test_data, fname)
             tc = get_rate_coefficients(path_rates)
             self.rates.append(get_rates(self.mp, tc, H))
 
         # Load averaged rates for lepton-lepton part
         path_rates = path.join(test_data, "rates/Int_ModH_MN10E-1_kcAve.dat")
+        # path_rates = path.join(test_data, "rates/Int_OrgH_MN10E-1_kcAve.dat")
         self.tc_avg = get_rate_coefficients(path_rates)
         self.rt_avg = get_rates(self.mp, self.tc_avg)
 
@@ -442,8 +453,6 @@ class TrapezoidalSolver(Solver, QuadratureSolver):
 
         # Solve them
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
-        np.set_printoptions(threshold=np.inf)
-        print(sol[0])
 
         self._total_asymmetry = np.abs(sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2])
 

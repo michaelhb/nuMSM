@@ -7,14 +7,31 @@ from test_scripts.bau_grid_plot import bau_grid_plot
 # warnings.simplefilter("error", ODEintWarning)
 import time
 
+mp = ModelParams(
+    M=1.0,
+    dM=1e-11,
+    Imw=np.log(3),
+    Rew=1/4 * np.pi,
+    delta= np.pi,
+    eta=3/2 * np.pi
+)
+#
 # mp = ModelParams(
 #     M=1.0,
-#     dM=1e-11,
+#     dM=1e-12,
 #     Imw=np.log(3),
-#     Rew=1/4 * np.pi,
-#     delta= np.pi,
-#     eta=3/2 * np.pi
+#     Rew=13/16*np.pi,
+#     delta= 29/16*np.pi,
+#     eta=22/16*np.pi
 # )
+
+# MN = 1.0 # HNLs mass
+# dM = 1e-12 # mass difference
+#
+# imw = np.log(3)
+# rew = 13/16*pi
+# delta = 29/16*pi
+# eta = 22/16*pi
 
 # MN = 1.0 # HNLs mass
 # dM = 1e-12 # mass difference
@@ -24,13 +41,13 @@ import time
 # delta = pi
 # eta = 3/2*pi
 
-mp = ModelParams(M=1.0, dM=1e-12, Imw=0.5, Rew=0.3*np.pi, delta=np.pi, eta=3/2*np.pi)
+# mp = ModelParams(M=1.0, dM=1e-12, Imw=0.5, Rew=0.3*np.pi, delta=np.pi, eta=3/2*np.pi)
 
 if __name__ == '__main__':
 
     T0 = get_T0(mp)
     print(T0)
-    solver = TrapezoidalSolver(mp, T0, Tsph, 1, {'rtol' : 1e-13, 'atol' : 1e-13})
+    solver = TrapezoidalSolver(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
     start = time.time()
     solver.solve()
     end = time.time()
