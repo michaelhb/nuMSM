@@ -78,7 +78,7 @@ if __name__ == "__main__":
     #                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0]
 
     #yikes
-    kc_list_maximal = [0.1, 0.2, 0.3, 0.4] + [0.1*kc for kc in range(5,101)]
+    kc_list_maximal = [0.3, 0.4] + [0.1*kc for kc in range(5,101)]
     # kc_list_maximal = [0.3, 0.4] + [0.1*kc for kc in range(5,101)]
     kc_list = kc_list_maximal
 
@@ -136,9 +136,10 @@ if __name__ == "__main__":
     # plot_rate(kc_list, hnlhm, "hnlhm")
     # plot_rate(kc_list, hnlh0, "hnlh0")
     # plot_rate(kc_list, hnldeq, "hnldeq")
-    plot_rate(kc_list, nugp, "nugp")
-    plot_rate(kc_list, nugm, "nugm")
-    plot_integrand_nu(kc_list, nugp, weights, "nugp")
-    plot_integrand_nu(kc_list, nugm, weights, "nugm")
+    # plot_rate(kc_list, nugp, "nugp")
+    # plot_rate(kc_list, nugm, "nugm")
+    # plot_integrand_nu(kc_list, nugp, weights, "nugp")
+    # plot_integrand_nu(kc_list, nugm, weights, "nugm")
+
 
 

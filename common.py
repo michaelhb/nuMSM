@@ -23,7 +23,8 @@ Rates = namedtuple('Rates', [
     "GBt_N_a",  # (3,2,2)
     "HB_N", # (2,2)
     "GB_N", # (2,2)
-    "Seq" # (2,2)
+    "Seq", # (2,2)
+    "H_I" # (2,2)
 ])
 
 def get_T0(mp):
@@ -57,7 +58,8 @@ def jacobian(z, mp, smdata):
     T = mp.M*np.exp(-z)
     geff = smdata.geff(T)
     MpStar = Mp*np.sqrt(45.0/(4*np.pi**3*geff))
-    res = MpStar/(T**2)
+    # res = MpStar/(T**2)
+    res = (mp.M*MpStar) / (T ** 2)
     return res
 
 '''
@@ -122,4 +124,17 @@ def tr_h(H_a):
         Hermitian or skew-Hermitian.
     :return: (3,4) matrix X_ai = Tr[tau_i.H_a].
     """
-    return np.einsum('ijk,akj->ai',tau,H_a)
+    return np.einsum('ijk,akj->ai', tau, H_a)
+
+def trapezoidal_weights(points):
+    if (len(points)) == 1:
+        return [1.0]
+    else:
+        weights = [0.5 * (points[1] - points[0])]
+
+        for i in range(1, len(points) - 1):
+            weights.append(0.5 * (points[i + 1] - points[i - 1]))
+
+        weights.append(0.5 * (points[-1] - points[-2]))
+        return weights
+

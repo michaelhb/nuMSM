@@ -48,7 +48,8 @@ def get_rates(mp, tc, H = 1):
 
     def GammaBarTilde_nu_a(z):
         # return np.array([-tc.nugp(Tz(z))*YNplus[a].T + tc.nugm(Tz(z))*YNminus[a].T for a in range(3)])
-        return np.array([-tc.hnlgp(Tz(z)) * YNplus[a].T + tc.hnlgm(Tz(z)) * YNminus[a].T for a in range(3)])
+        res = np.array([-tc.hnlgp(Tz(z)) * YNplus[a].T + tc.hnlgm(Tz(z)) * YNminus[a].T for a in range(3)])
+        return res
 
     def HamiltonianBar_N(z):
         return mp.dM*np.array([[0,1],[1,0]])*tc.hnlh0(Tz(z)) \
@@ -65,11 +66,15 @@ def get_rates(mp, tc, H = 1):
     def Seq(z):
         return tc.hnldeq(Tz(z))*np.identity(2)
 
+    def H_I(z):
+        return tc.hnlhp(Tz(z))*np.sum(YNplus, axis=0) + tc.hnlhm(Tz(z))*np.sum(YNminus, axis=0)
+
     return Rates(
         GammaBar_nu_a,
         GammaBarTilde_nu_a,
         GammaBarTilde_N_a,
         HamiltonianBar_N,
         GammaBar_N,
-        Seq
+        Seq,
+        H_I
     )

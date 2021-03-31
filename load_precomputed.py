@@ -12,16 +12,29 @@ def get_rate_coefficients(path):
 
     T, nugp, nugm, hnlgp, hnlgm, hnlhp, hnlhm, hnlh0, hnldeq = np.loadtxt(path).T
 
+    # TESTING
+    zeroes = [0]*len(nugp)
     return TDependentRateCoeffs(
         interp1d(T, nugp, fill_value="extrapolate"),
-        interp1d(T, nugm, fill_value="extrapolate"),
+        interp1d(T, zeroes, fill_value="extrapolate"),
         interp1d(T, hnlgp, fill_value="extrapolate"),
-        interp1d(T, hnlgm, fill_value="extrapolate"),
+        interp1d(T, zeroes, fill_value="extrapolate"),
         interp1d(T, hnlhp, fill_value="extrapolate"),
         interp1d(T, hnlhm, fill_value="extrapolate"),
         interp1d(T, hnlh0, fill_value="extrapolate"),
         interp1d(T, hnldeq, fill_value="extrapolate")
     )
+
+    # return TDependentRateCoeffs(
+    #     interp1d(T, nugp, fill_value="extrapolate"),
+    #     interp1d(T, nugm, fill_value="extrapolate"),
+    #     interp1d(T, hnlgp, fill_value="extrapolate"),
+    #     interp1d(T, hnlgm, fill_value="extrapolate"),
+    #     interp1d(T, hnlhp, fill_value="extrapolate"),
+    #     interp1d(T, hnlhm, fill_value="extrapolate"),
+    #     interp1d(T, hnlh0, fill_value="extrapolate"),
+    #     interp1d(T, hnldeq, fill_value="extrapolate")
+    # )
 
 def get_susceptibility_matrix(path):
     '''

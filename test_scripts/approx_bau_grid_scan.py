@@ -52,7 +52,7 @@ def bau_grid_scan(name, solver_class, points_per_dim, atol_default):
                 solver = solver_class(mp, T0, Tsph, 2, {'rtol' : 1e-6, 'atol' : atol_default})
                 try:
                     solver.solve()
-                    bau = (28. / 78.) * solver.get_final_asymmetry()
+                    bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
                     print("BAU: {}".format(bau))
                 except Exception as e:
                     print(e)
@@ -66,7 +66,7 @@ def bau_grid_scan(name, solver_class, points_per_dim, atol_default):
                     solver = solver_class(mp, T0, Tsph, 2,{'rtol' : 1e-6, 'atol' : 1e-20})
                     try:
                         solver.solve()
-                        bau = (28. / 78.) * solver.get_final_asymmetry()
+                        bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
                         print("BAU: {}".format(bau))
                     except Exception as e:
                         print(e)

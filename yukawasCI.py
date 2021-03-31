@@ -4,7 +4,6 @@ from numpy import pi, cos, sin, exp
 def FM(M, dM, Imw, Rew, delta, eta,  H = 1, xi = 1):
     '''returns an array of Yukawas in the mass basis
     this has been validated against the mathematica code'''
-
     v0 = 174.1
     w = Rew + 1.0j*Imw
     cw, sw = cos(w), sin(w)

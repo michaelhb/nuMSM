@@ -39,15 +39,15 @@ def total_asymmetry_plots():
 
             avg_solver = AveragedSolver(mp, T0, Tsph)
             avg_solver.solve()
-            avg_final = avg_solver.get_final_asymmetry()
+            avg_final = avg_solver.get_final_lepton_asymmetry()
             print("Total asymmetry (averaged): {}".format(avg_final))
-            asymmetry_avg = avg_solver.get_total_asymmetry()
+            asymmetry_avg = avg_solver.get_total_lepton_asymmetry()
 
             trap_solver = TrapezoidalSolver(mp, T0, Tsph)
             trap_solver.solve()
-            trap_final = trap_solver.get_final_asymmetry()
+            trap_final = trap_solver.get_final_lepton_asymmetry()
             print("Total asymmetry (trapezoidal): {}".format(trap_final))
-            asymmetry_trap = trap_solver.get_total_asymmetry()
+            asymmetry_trap = trap_solver.get_total_lepton_asymmetry()
 
             Tlist = trap_solver.Tz(np.linspace(trap_solver.zT(T0), trap_solver.zT(Tsph), 200))
             plt.loglog(Tlist, asymmetry_avg, label="Avg: {:.3e}".format(avg_final))
