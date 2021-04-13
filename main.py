@@ -6,10 +6,10 @@ from test_scripts.bau_grid_plot import bau_grid_plot
 # import warnings
 # warnings.simplefilter("error", ODEintWarning)
 import time
-
+#
 mp = ModelParams(
     M=1.0,
-    dM=1e-10,
+    dM=1e-12,
     # dM=0,
     Imw=np.log(3),
     Rew=1/4 * np.pi,
@@ -19,7 +19,7 @@ mp = ModelParams(
 #
 # mp = ModelParams(
 #     M=1.0,
-#     dM=1e-12,
+#     dM=1e-11,
 #     Imw=np.log(3),
 #     Rew=13/16*np.pi,
 #     delta= 29/16*np.pi,
@@ -41,17 +41,20 @@ mp = ModelParams(
 # delta = pi
 # eta = 3/2*pi
 
-# mp = ModelParams(M=1.0, dM=1e-12, Imw=0.5, Rew=0.3*np.pi, delta=np.pi, eta=3/2*np.pi)
+# mp = ModelParams(M=1.0, dM=1e-12, Imw=0.5, Rew=0.8*np.pi, delta=np.pi, eta=3/2*np.pi)
 
 if __name__ == '__main__':
 
+    # REMINDER avg has Seq turned off.
+
     T0 = get_T0(mp)
     print(T0)
-    solver = AveragedSolver(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
+    solver = TrapezoidalSolverCPI(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
     start = time.time()
-    solver.solve()
+    solver.solve(eigvals=True)
     end = time.time()
     print("Time: {}".format(end - start))
+    solver.plot_eigenvalues()
     solver.plot_total_lepton_asymmetry()
     solver.plot_total_hnl_asymmetry()
     solver.plot_L_violation()

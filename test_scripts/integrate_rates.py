@@ -72,7 +72,7 @@ def plot_integrand_nu(kc_list, tc_vals, weights, name):
     plt.show()
 
 if __name__ == "__main__":
-    T = 131.7
+    T = 1000.0
     #
     # kc_list = [0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
     #                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0]

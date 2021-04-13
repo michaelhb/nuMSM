@@ -24,8 +24,9 @@ Rates = namedtuple('Rates', [
     "HB_N", # (2,2)
     "GB_N", # (2,2)
     "Seq", # (2,2)
-    "H_I" # (2,2)
-])
+    "H_I"], # (2,2)
+    defaults=[None, None, None, None, None, None, None]
+)
 
 def get_T0(mp):
     '''
@@ -44,6 +45,12 @@ def f_nu(kc):
 def f_N(T, mp, kc):
     return 1.0/(np.exp(np.sqrt(mp.M**2 + (T**2)*(kc**2))/T) + 1.0)
 
+def Tz(z, M):
+    return M*np.exp(-z)
+
+def zT(T, M):
+    return np.log(M/T)
+
 '''
 Factor arising from the change of variables T -> z
 '''
@@ -55,12 +62,12 @@ def jacobian(z, mp, smdata):
     :return: jacobian for transformation T -> Z
     """
     Mp = 1.22e19  # Planck mass
-    T = mp.M*np.exp(-z)
+    T = Tz(z, mp.M)
     geff = smdata.geff(T)
     MpStar = Mp*np.sqrt(45.0/(4*np.pi**3*geff))
-    # res = MpStar/(T**2)
     res = (mp.M*MpStar) / (T ** 2)
     return res
+    # return -1.0*mp.M*np.exp(-z)
 
 '''
 These are the (interpolated) temperature dependent coefficients 
