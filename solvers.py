@@ -272,7 +272,7 @@ class TrapezoidalSolverCPI(Solver):
         x0 = [0, 0, 0]
 
         for kc in self.kc_list:
-            rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp, kc) * np.identity(2) / self.smdata.s(self.T0)
+            rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)
             x0.extend([0, 0, 0, 0])

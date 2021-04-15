@@ -42,8 +42,8 @@ def f_nu(kc):
     return 1.0/(np.exp(kc) + 1)
 
 # Equilibrium distribution for HNLs
-def f_N(T, mp, kc):
-    return 1.0/(np.exp(np.sqrt(mp.M**2 + (T**2)*(kc**2))/T) + 1.0)
+def f_N(T, M, kc):
+    return 1.0/(np.exp(np.sqrt(M**2 + (T**2)*(kc**2))/T) + 1.0)
 
 def Tz(z, M):
     return M*np.exp(-z)
