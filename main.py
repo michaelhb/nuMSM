@@ -1,10 +1,6 @@
 from solvers import *
-from test_scripts.approx_bau_grid_scan import bau_grid_scan
-from test_scripts.bau_grid_plot import bau_grid_plot
-# from scipy.integrate.odepack import ODEintWarning
-# import warnings
-# warnings.simplefilter("error", ODEintWarning)
 import time
+import cProfile
 #
 # mp = ModelParams(
 #     M=1.0,
@@ -45,17 +41,18 @@ mp = ModelParams(
 if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
     # kc_list = [0.5, 1.0, 2.0]
-    kc_list = [1.0]
-    # kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    # kc_list = [1.0]
+    kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
 
     T0 = get_T0(mp)
     print(T0)
     # solver = AveragedSolver(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
-    solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, 1, {'rtol': 1e-7, 'atol': 1e-17})
+    # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, 1, {'rtol': 1e-7, 'atol': 1e-17})
+    solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, 1)
     start = time.time()
     solver.solve(eigvals=False)
     end = time.time()
-    print("Time: {}".format(end - start))
+    print("Time (solve): {}".format(end - start))
     # solver.plot_eigenvalues()
     solver.plot_total_lepton_asymmetry()
     solver.plot_total_hnl_asymmetry()
@@ -63,10 +60,3 @@ if __name__ == '__main__':
     print("BAU: {:.3e}".format((28./78.) * solver.get_final_lepton_asymmetry()))
 
     print(solver.get_total_hnl_asymmetry() / solver.get_total_lepton_asymmetry())
-
-    # # total_asymmetry_plots()
-    # # bau_grid_scan("avg", AveragedSolver)
-    # # bau_grid_scan("trap_15", TrapezoidalSolver, 15, 1e-20)
-    # bau_grid_scan("trap_30", TrapezoidalSolver, 30, 1e-20)
-    # # bau_grid_scan("avg_15", AveragedSolver, 15, 1e-15)
-    # bau_grid_plot("trap_30")

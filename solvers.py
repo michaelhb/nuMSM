@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from scipy.integrate import odeint
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from common import *
 from common import trapezoidal_weights
@@ -8,8 +9,11 @@ from rates import get_rates
 from os import path
 from scipy.linalg import block_diag
 from scipy.linalg import eig as speig
+import time
 
-ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
+# ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
+ode_par_defaults = {}
+mpl.rcParams['figure.dpi'] = 300
 
 class Solver(ABC):
 
@@ -303,7 +307,6 @@ class TrapezoidalSolverCPI(Solver):
 
         return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
                                                                                       G_Nhat)
-
     def coefficient_matrix(self, z, quad):
         T = Tz(z, self.mp.M)
 
@@ -353,7 +356,7 @@ class TrapezoidalSolverCPI(Solver):
             [g_nu, np.hstack(top_row)],
             [np.vstack(left_col), block_diag(*diag)]
         ])
-        np.set_printoptions(precision=4, linewidth=500, threshold=np.inf)
+
         return np.real(res)
 
     def calc_hnl_asymmetry(self, sol, zlist, quad):
@@ -420,6 +423,9 @@ class TrapezoidalSolverCPI(Solver):
                    self.coefficient_matrix(z, quad)
 
         # Solve them
+        start = time.time()
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
+        end = time.time()
+        print("Time (odeint): {}".format(end - start))
         self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
         self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
