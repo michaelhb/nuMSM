@@ -225,13 +225,9 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 
 class TrapezoidalSolverCPI(Solver):
 
-    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
-        # self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
-        self.kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-        # self.kc_list = [0.5, 1.0, 2.0]
-        # self.kc_list = [1.0]
-        print("Using {} modes".format(len(self.kc_list)))
+    def __init__(self, model_params, T0, TF, kc_list, H = 1, ode_pars = ode_par_defaults):
 
+        self.kc_list = kc_list
         self.mp = model_params
 
         self.rates = []
