@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from common import *
 from common import trapezoidal_weights
 from load_precomputed import *
-from rates import get_rates, get_normalised_rates
+# from rates import get_rates, get_normalised_rates
+from rates import get_rates
 from os import path
 from scipy.sparse import coo_matrix, csr_matrix
 from scipy.linalg import block_diag
@@ -451,12 +452,16 @@ class TrapezoidalSolver(Solver):
 class TrapezoidalSolverCPI(Solver):
 
     def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
-        # self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
+        self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
+        # self.kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
         # self.kc_list = [0.5, 1.0, 2.0]
-        self.kc_list = [1.0]
+        # self.kc_list = [1.0]
         print("Using {} modes".format(len(self.kc_list)))
 
         self.mp = model_params
+        # self.Tscale = T0/((2*(np.pi**2))**(1/3))
+        # self.Tscale = T0
+        self.Tscale = 1.0
 
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -500,7 +505,9 @@ class TrapezoidalSolverCPI(Solver):
         x0 = [0, 0, 0]
 
         for kc in kc_list:
-            rho_plus_0 = -1*f_N(T0, mp, kc)*np.identity(2)/smdata.s(T0)
+            # rho_plus_0 = -1*f_N(T0, mp, kc)*np.identity(2)/smdata.s(T0)
+            # rho_plus_0 = -1 * (self.Tscale**3) * f_nu(kc) * np.identity(2) / smdata.s(T0)
+            rho_plus_0 = -1 * (T0 ** 3) * f_N(T0, mp, kc) * np.identity(2) / smdata.s(T0)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)
             x0.extend([0, 0, 0, 0])
@@ -528,7 +535,9 @@ class TrapezoidalSolverCPI(Solver):
         T = Tz(z, self.mp.M)
         G_Nhat = np.array([
             self.hat(np.imag(g), U) if imag else self.hat(np.real(g), U) for g in rt.GBt_N_a(z)])
-        return (2.0 / T) * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', susc(T), tau, G_Nhat)
+        # return (self.Tscale**3)*(2.0 / T) * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', susc(T), tau, G_Nhat)
+        return ((T**3))*(self.Tscale ** 3) * (2.0 / T) * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', susc(T), tau,
+                                                                                      G_Nhat)
 
     def coefficient_matrix(self, z, quad, mp, susc, smdata):
         T = Tz(z, self.mp.M)
@@ -549,9 +558,10 @@ class TrapezoidalSolverCPI(Solver):
 
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, H_I = [R(z) for R in rt]
 
-            # U = self.U(mp, smdata, kc, T)
-            U = np.identity(2)
-            W = ((T**3)/(2*(np.pi**2)))*w_i*(kc**2)
+            U = self.U(mp, smdata, kc, T)
+            # U = np.identity(2)
+            # W = (((T/self.Tscale)**3)/(2*(np.pi**2)))*w_i*(kc**2)
+            W = (((1.0 / self.Tscale) ** 3) / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
             GBTI_nu_a_hat = [self.hat(np.imag(A), U) for A in GBt_nu_a]
@@ -564,7 +574,7 @@ class TrapezoidalSolverCPI(Solver):
             left_col.append(-1*self.gamma_N(z, kc, rt, mp, susc, U, imag=False))
 
             # Diag blocks
-            H_I = HB_N
+            # H_I = HB_N
             H_IhatR = self.hat(np.real(H_I), U)
             H_IhatI = self.hat(np.imag(H_I), U)
             GB_NhatI = self.hat(np.imag(GB_N), U)
@@ -595,7 +605,9 @@ class TrapezoidalSolverCPI(Solver):
                 base_col = 3 + 8*j
                 rminus_11 = sol[i, base_col + 4]
                 rminus_22 = sol[i, base_col + 5]
-                res_i += ((T**3)/(2*(np.pi**2)))*(kc**2)*weight*(rminus_11 + rminus_22)
+                # res_i += (1.0/(self.Tscale**3))*((T**3)/(2*(np.pi**2)))*(kc**2)*weight*(rminus_11 + rminus_22)
+                res_i += (1.0 / (self.Tscale ** 3)) * (1.0 / (2 * (np.pi ** 2))) * (kc ** 2) * weight * (
+                            rminus_11 + rminus_22)
 
             res.append(res_i)
         return np.array(res)

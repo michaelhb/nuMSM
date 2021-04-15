@@ -51,6 +51,12 @@ def Tz(z, M):
 def zT(T, M):
     return np.log(M/T)
 
+# def Tz(z, M):
+#     return Tsph*np.exp(-z)
+#
+# def zT(T, M):
+#     return np.log(Tsph/T)
+
 '''
 Factor arising from the change of variables T -> z
 '''
@@ -65,7 +71,7 @@ def jacobian(z, mp, smdata):
     T = Tz(z, mp.M)
     geff = smdata.geff(T)
     MpStar = Mp*np.sqrt(45.0/(4*np.pi**3*geff))
-    res = (mp.M*MpStar) / (T ** 2)
+    res = MpStar / (T ** 2)
     return res
     # return -1.0*mp.M*np.exp(-z)
 
