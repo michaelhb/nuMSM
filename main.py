@@ -1,5 +1,4 @@
 from solvers import *
-from test_scripts.total_asymmetry_plots import total_asymmetry_plots
 from test_scripts.approx_bau_grid_scan import bau_grid_scan
 from test_scripts.bau_grid_plot import bau_grid_plot
 # from scipy.integrate.odepack import ODEintWarning
@@ -49,7 +48,7 @@ if __name__ == '__main__':
 
     T0 = get_T0(mp)
     print(T0)
-    solver = TrapezoidalSolverCPI(mp, T0, 50., 1, {'rtol' : 1e-7, 'atol' : 1e-17})
+    solver = TrapezoidalSolverCPI(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
     start = time.time()
     solver.solve(eigvals=False)
     end = time.time()

@@ -118,21 +118,14 @@ class AveragedSolver(Solver):
 
             if eigvals:
                 eig = speig((jac*sysmat), right=False, left=True)
-                # ix_small = np.argmin(np.abs(eig[0]))
-                # eval_small = np.abs(eig[0][ix_small])
-                # evec_small = np.abs(eig[1][:,ix_small])
-                # print("Smallest Eval: ", eval_small)
-                # print("Corresponding left Evec: ", evec_small)
-
                 self._eigenvalues.append(eig[0])
 
-            # TURNING OFF SOURCE TERM
-            # res = jac*(np.dot(sysmat, x) + self.inhomogeneous_part(z, self.rates))
-            res = jac * (np.dot(sysmat, x))
+            res = jac*(np.dot(sysmat, x) + self.inhomogeneous_part(z, self.rates))
+            # res = jac * (np.dot(sysmat, x)) # without source term
 
             return res
 
-        def jac(x_dot, z):
+        def jac(x, z):
             return jacobian(z, self.mp, self.smdata)*self.coefficient_matrix(z, self.rates, self.mp, self.susc)
 
         # Solve them
@@ -230,230 +223,11 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
     "kc_list", "weights", "rates"
 ])
 
-class TrapezoidalSolver(Solver):
-    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
-        # self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
-        self.kc_list = [0.5, 1.0, 2.0]
-        print("Using {} modes".format(len(self.kc_list)))
-
-        self.mp = model_params
-        self.rates = []
-
-        test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
-
-        for kc in self.kc_list:
-            fname = 'rates/Int_ModH_MN10E-1_kc{}E-1.dat'.format(int(kc * 10))
-            path_rates = path.join(test_data, fname)
-            tc = get_rate_coefficients(path_rates)
-            self.rates.append(get_rates(self.mp, tc, H))
-
-        # Load averaged rates for lepton-lepton part
-        path_rates = path.join(test_data, "rates/Int_ModH_MN10E-1_kcAve.dat")
-        self.tc_avg = get_rate_coefficients(path_rates)
-        self.rt_avg = get_rates(self.mp, self.tc_avg)
-
-        # Load standard model data, susceptibility matrix
-        path_SMdata = path.join(test_data, "standardmodel.dat")
-        path_suscept_data = path.join(test_data, "susceptibility.dat")
-        self.susc = get_susceptibility_matrix(path_suscept_data)
-        self.smdata = get_sm_data(path_SMdata)
-
-        Solver.__init__(self, model_params, T0, TF, H, ode_pars)
-
-    # Initial condition
-    def get_initial_state(self, T0, mp, smdata, kc_list):
-        x0 = [0, 0, 0]
-        s = smdata.s(T0)
-
-        for kc in kc_list:
-            rho0 = -1*f_N(T0, mp, kc)*np.identity(2)/s
-            r0 = np.einsum('kij,ji->k', tau, rho0)
-            x0.extend(r0)
-            x0.extend(r0)
-
-        return np.real(x0)
-
-    def gamma_omega(self, z, susc, quad):
-        T = Tz(z, self.mp.M)
-
-        # Integrate rate
-        g_int = np.zeros(3, dtype="complex128")
-        for wi, rt, kc in zip(quad.weights, quad.rates, quad.kc_list):
-            g_int += wi*(kc**2)*rt.GB_nu_a(z)*f_nu(kc)*(1 - f_nu(kc))
-
-        g_int *= (T**2)/(np.pi**2)
-
-        # Contract with susc matrix
-        return (g_int.T * susc(T)).T
-
-    def gamma_N(self, z, kc, rt, mp, susc, conj=False):
-        T = Tz(z, self.mp.M)
-        G_N = np.conj(rt.GBt_N_a(z)) if conj else rt.GBt_N_a(z)
-        return (1.0/T)*f_nu(kc)*(1-f_nu(kc))*np.einsum('kij,aji,ab->kb', tau, G_N, susc(T))
-
-    def _get_matrix_triples(self, M, row_offset, col_offset):
-        n_row, n_col = M.shape
-        row = []
-        col = []
-        data = []
-        for r in range(n_row):
-            for c in range(n_col):
-                row.append(r + row_offset)
-                col.append(c + col_offset)
-                data.append(M[r][c])
-        return row, col, data
-
-    def _make_sparse(self, n_kc, g_nu, top_row, left_col, diag):
-        row, col, data = self._get_matrix_triples(g_nu, 0, 0)
-
-        # Top row (3,4) blocks
-        col_offset = 3
-        for i in range(n_kc*2):
-            block = top_row[i]
-            r, c, d = self._get_matrix_triples(block, 0, col_offset)
-            row.extend(r)
-            col.extend(c)
-            data.extend(d)
-            col_offset += 4
-
-        # Left row (4,3) blocks
-        row_offset = 3
-        for i in range(n_kc*2):
-            block = left_col[i]
-            r, c, d = self._get_matrix_triples(block, row_offset, 0)
-            row.extend(r)
-            col.extend(c)
-            data.extend(d)
-            row_offset += 4
-
-        # Diagonals (4,4) blocks
-        row_offset = 3
-        col_offset = 3
-        for i in range(n_kc*2):
-            block = diag[i]
-            r, c, d = self._get_matrix_triples(block, row_offset, col_offset)
-            row.extend(r)
-            col.extend(c)
-            data.extend(d)
-            row_offset += 4
-            col_offset += 4
-
-        return csr_matrix(coo_matrix((np.real(data), (np.real(row), np.real(col),))))
-
-    def coefficient_matrix(self, z, quad, rt_avg, mp, susc):
-        T = Tz(z, self.mp.M)
-
-        # Top left block, only part that doesn't depend on kc.
-        g_nu = -self.gamma_omega(z, susc, quad)
-
-        top_row = []
-        left_col = []
-        diag = []
-
-        n_kc = len(quad.kc_list)
-
-        for i in range(n_kc):
-            kc = quad.kc_list[i]
-            rt = quad.rates[i]
-            w_i = quad.weights[i]
-
-            GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, *_ = [R(z) for R in rt]
-
-            # Top row
-            top_row.append(-w_i*(kc**2)*(T**3/(2.0*(np.pi**2)))*tr_h(np.conj(GBt_nu_a)))
-            top_row.append(w_i*(kc**2)*(T**3/(2.0*(np.pi**2)))*tr_h(GBt_nu_a))
-
-            # Left column
-            g_N = self.gamma_N(z, kc, rt, mp, susc)
-            g_Nc = self.gamma_N(z, kc, rt, mp, susc, conj=True)
-            left_col.append(-g_N)
-            left_col.append(g_Nc)
-
-            # Diagonal
-            diag.append(-1j*Ch(HB_N) - 0.5*Ah(GB_N))
-            diag.append(-1j*Ch(np.conj(HB_N)) - 0.5*Ah(np.conj(GB_N)))
-
-        sparse = self._make_sparse(n_kc, g_nu, top_row, left_col, diag)
-
-        return sparse
-        # return np.real(np.block([
-        #     [g_nu, np.hstack(top_row)],
-        #     [np.vstack(left_col), block_diag(*diag)]
-        # ]))
-
-    def calc_hnl_asymmetry(self, sol, zlist, quad):
-        res = []
-
-        for i, z in enumerate(zlist):
-            res_i = 0
-            T = Tz(z, self.mp.M)
-            for j, kc in enumerate(quad.kc_list):
-                kc = quad.kc_list[j]
-                weight = quad.weights[j]
-                base_col = 3 + 8*j
-                r_11 = sol[i, base_col]
-                r_22 = sol[i, base_col + 1]
-                rbar_11 = sol[i, base_col + 4]
-                rbar_22 = sol[i, base_col + 5]
-
-                res_i += ((T**3)/(2*(np.pi**2)))*(kc**2)*weight*(
-                    r_11 + r_22 - rbar_11 - rbar_22
-                )
-            res.append(res_i)
-
-        return res
-
-    def calc_lepton_asymmetry(self, sol, zlist):
-
-        res = []
-
-        for i, z in enumerate(zlist):
-            T = Tz(z, self.mp.M)
-            res.append((T**3)/(2*(np.pi)**2)*(sol[i,0] + sol[i,1] + sol[i,2]))
-
-        return res
-
-    def solve(self, eigvals=False):
-        quad = QuadratureInputs(self.kc_list, trapezoidal_weights(self.kc_list), self.rates)
-        initial_state = self.get_initial_state(self.T0, self.mp, self.smdata, self.kc_list)
-
-        # Integration bounds
-        z0 = zT(self.T0, self.mp.M)
-        zF = zT(self.TF, self.mp.M)
-
-        # Output grid
-        zlist = np.linspace(z0, zF, 200)
-
-        # Eigenvalues
-        self._eigenvalues = []
-
-        # Construct system of equations
-        def f_state(x_dot, z):
-            sysmat = self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc)
-            jac = jacobian(z, self.mp, self.smdata)
-
-            res = jac * (sysmat.dot(x_dot))
-
-            if eigvals:
-                self._eigenvalues.append(np.linalg.eigvals(jac*sysmat))
-
-            return res
-
-        def jac(x_dot, z):
-            return jacobian(z, self.mp, self.smdata) * \
-                   self.coefficient_matrix(z, quad, self.rt_avg, self.mp, self.susc).todense()
-
-        # Solve them
-        sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
-        self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
-        self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
-
-
 class TrapezoidalSolverCPI(Solver):
 
     def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
-        self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
-        # self.kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+        # self.kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
+        self.kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
         # self.kc_list = [0.5, 1.0, 2.0]
         # self.kc_list = [1.0]
         print("Using {} modes".format(len(self.kc_list)))
