@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     T0 = get_T0(mp)
     print(T0)
-    solver = TrapezoidalSolverCPI(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
+    solver = AveragedSolver(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
     start = time.time()
     solver.solve(eigvals=False)
     end = time.time()

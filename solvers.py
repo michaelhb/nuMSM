@@ -4,10 +4,8 @@ import matplotlib.pyplot as plt
 from common import *
 from common import trapezoidal_weights
 from load_precomputed import *
-# from rates import get_rates, get_normalised_rates
 from rates import get_rates
 from os import path
-from scipy.sparse import coo_matrix, csr_matrix
 from scipy.linalg import block_diag
 from scipy.linalg import eig as speig
 
@@ -102,7 +100,7 @@ class AveragedSolver(Solver):
     def solve(self, eigvals=False):
 
         # Get initial conditions
-        initial_state = self.get_initial_state(self.T0, self.smdata)
+        initial_state = self.get_initial_state()
 
         # Integration bounds
         z0 = zT(self.T0, self.mp.M)
@@ -113,32 +111,32 @@ class AveragedSolver(Solver):
 
         # Construct system of equations
         def f_state(x, z):
-            sysmat = self.coefficient_matrix(z, self.rates, self.mp, self.susc)
+            sysmat = self.coefficient_matrix(z)
             jac = jacobian(z, self.mp, self.smdata)
 
             if eigvals:
                 eig = speig((jac*sysmat), right=False, left=True)
                 self._eigenvalues.append(eig[0])
 
-            res = jac*(np.dot(sysmat, x) + self.inhomogeneous_part(z, self.rates))
+            res = jac*(np.dot(sysmat, x) + self.inhomogeneous_part(z))
             # res = jac * (np.dot(sysmat, x)) # without source term
 
             return res
 
         def jac(x, z):
-            return jacobian(z, self.mp, self.smdata)*self.coefficient_matrix(z, self.rates, self.mp, self.susc)
+            return jacobian(z, self.mp, self.smdata)*self.coefficient_matrix(z)
 
         # Solve them
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
         self._total_lepton_asymmetry = sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2]
         self._total_hnl_asymmetry = sol[0][:, 7] + sol[0][:, 8]
 
-    def get_initial_state(self, T0, smdata):
+    def get_initial_state(self):
         #equilibrium number density for a relativistic fermion, T = T0
-        neq = (3.*zeta3*(T0**3))/(4*(np.pi**2))
+        neq = (3.*zeta3*(self.T0**3))/(4*(np.pi**2))
 
         #entropy at T0
-        s = smdata.s(T0)
+        s = self.smdata.s(self.T0)
 
         n_plus0 = -np.identity(2)*neq/s
         r_plus0 = np.einsum('kij,ji->k',tau,n_plus0)
@@ -146,7 +144,7 @@ class AveragedSolver(Solver):
         res = np.concatenate([[0,0,0],r_plus0,[0,0,0,0]])
         return np.real(res)
 
-    def gamma_omega(self, z, rt, susc):
+    def gamma_omega(self, z):
         """
         :param z: integration coordinate z = ln(M/T)
         :param rt: see common.ModelParams
@@ -154,37 +152,39 @@ class AveragedSolver(Solver):
         :return: (3,3) matrix which mixes the n_delta in the upper left corner of the evolution matrix,
         proportional to T^2/6: -Re(GammaBar_nu_alpha).omega_alpha_beta (no sum over alpha)
         """
-        GB_nu_a = rt.GB_nu_a(z)
-        return (GB_nu_a.T * susc).T
+        GB_nu_a = self.rates.GB_nu_a(z)
+        return (GB_nu_a.T * self.susc(Tz(z, self.mp.M))).T
 
-    def Yr(self, z, rt, susc):
+    def Yr(self, z):
         """
         :param z: integration coordinate z = ln(M/T)
         :param rt: see common.ModelParams
         :return: (4,3) matrix appearing in the (3,1) block of the evolution matrix
         """
-        reGBt_nu_a = np.real(rt.GBt_N_a(z))
+        susc = self.susc(Tz(z, self.mp.M))
+        reGBt_nu_a = np.real(self.rates.GBt_N_a(z))
         return np.einsum('kij,aji,ab->kb',tau,reGBt_nu_a,susc)
 
-    def Yi(self, z, rt, susc):
+    def Yi(self, z):
         """
         :param z: integration coordinate z = ln(M/T)
         :param rt: see common.ModelParams
         :return: (4,3) matrix appearing in the (2,1) block of the evolution matrix
         """
-        imGBt_nu_a = np.imag(rt.GBt_N_a(z))
+        susc = self.susc(Tz(z, self.mp.M))
+        imGBt_nu_a = np.imag(self.rates.GBt_N_a(z))
         return np.einsum('kij,aji,ab->kb',tau,imGBt_nu_a,susc)
 
-    def inhomogeneous_part(self, z, rt):
+    def inhomogeneous_part(self, z):
         """
         :param rt: see common.IntegratedRates
         :return: inhomogeneous part of the ODE system
         """
-        Seq = rt.Seq(z)
+        Seq = self.rates.Seq(z)
         seq = np.einsum('kij,ji->k', tau, Seq)
         return np.real(np.concatenate([[0, 0, 0], -seq, [0, 0, 0, 0]]))
 
-    def coefficient_matrix(self, z, rt, mp, suscT):
+    def coefficient_matrix(self, z):
         '''
         :param z: integration coordinate z = ln(M/T)
         :param rt: see common.IntegratedRates
@@ -195,16 +195,16 @@ class AveragedSolver(Solver):
         '''
 
         T = Tz(z, self.mp.M)
-        GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, *_ = [R(z) for R in rt]
-        susc = suscT(T)
+        GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, *_ = [R(z) for R in self.rates]
+        susc = self.susc(T)
 
-        b11 = -self.gamma_omega(z, rt, susc)*(T**2)/6.
+        b11 = -self.gamma_omega(z)*(T**2)/6.
         b12 = 2j*tr_h(np.imag(GBt_nu_a))
         b13 = -tr_h(np.real(GBt_nu_a))
-        b21 = -(1j/2.)*self.Yi(z, rt, susc)*(T**2)/6.
+        b21 = -(1j/2.)*self.Yi(z)*(T**2)/6.
         b22 = -1j*Ch(np.real(HB_N)) - (1./2.)*Ah(np.real(GB_N))
         b23 = (1./2.)*Ch(np.imag(HB_N)) - (1j/4.)*Ah(np.imag(GB_N))
-        b31 = -self.Yr(z, rt, susc)*(T**2)/6.
+        b31 = -self.Yr(z)*(T**2)/6.
         b32 = 2*Ch(np.imag(HB_N)) - 1j*Ah(np.imag(GB_N))
         b33 = -1j*Ch(np.real(HB_N)) - (1./2.)*Ah(np.real(GB_N))
 
@@ -233,9 +233,6 @@ class TrapezoidalSolverCPI(Solver):
         print("Using {} modes".format(len(self.kc_list)))
 
         self.mp = model_params
-        # self.Tscale = T0/((2*(np.pi**2))**(1/3))
-        # self.Tscale = T0
-        self.Tscale = 1.0
 
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -248,7 +245,6 @@ class TrapezoidalSolverCPI(Solver):
 
             self.rates.append(rt)
 
-        # self.rates = get_normalised_rates(model_params, self.kc_list, trapezoidal_weights(self.kc_list), scale_to_avg=True)
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
 
         # Load standard model data, susceptibility matrix
@@ -259,13 +255,14 @@ class TrapezoidalSolverCPI(Solver):
 
         Solver.__init__(self, model_params, T0, TF, H, ode_pars)
 
-    def U(self, mp, smdata, kc, T):
+    # Unitary transform for interaction basis
+    def U(self, kc, T):
         k = T*kc
 
-        Mstar = 1.22e19 * np.sqrt(45.0 / (4 * (np.pi ** 3) * smdata.geff(T)))
-        E_N = np.sqrt(k**2 + mp.M**2)
+        Mstar = 1.22e19 * np.sqrt(45.0 / (4 * (np.pi ** 3) * self.smdata.geff(T)))
+        E_N = np.sqrt(k**2 + self.mp.M**2)
 
-        I = -1*((mp.dM * Mstar)/(2*(T**2)))*(E_N/mp.M - ((k/mp.M)**2)*np.arcsinh((mp.M/k)))
+        I = -1*((self.mp.dM * Mstar)/(2*(T**2)))*(E_N/self.mp.M - ((k/self.mp.M)**2)*np.arcsinh((self.mp.M/k)))
         # I = -1*((mp.dM*mp.M*Mstar)/(3*k*(T**2)))*(1 - (3./10.)*((mp.M/k)**2)) # approx
 
         res = np.array([
@@ -275,21 +272,18 @@ class TrapezoidalSolverCPI(Solver):
         return res
 
     # Initial condition
-    def get_initial_state(self, T0, mp, smdata, kc_list):
+    def get_initial_state(self):
         x0 = [0, 0, 0]
 
-        for kc in kc_list:
-            # rho_plus_0 = -1*f_N(T0, mp, kc)*np.identity(2)/smdata.s(T0)
-            # rho_plus_0 = -1 * (self.Tscale**3) * f_nu(kc) * np.identity(2) / smdata.s(T0)
-            rho_plus_0 = -1 * (T0 ** 3) * f_N(T0, mp, kc) * np.identity(2) / smdata.s(T0)
+        for kc in self.kc_list:
+            rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp, kc) * np.identity(2) / self.smdata.s(self.T0)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)
             x0.extend([0, 0, 0, 0])
-        np.set_printoptions(precision=4, linewidth=500, threshold=np.inf)
-        print(x0)
+
         return np.real(x0)
 
-    def gamma_omega(self, z, susc, quad):
+    def gamma_omega(self, z, quad):
         T = Tz(z, self.mp.M)
 
         # Integrate rate
@@ -300,24 +294,25 @@ class TrapezoidalSolverCPI(Solver):
         g_int *= (T**2)/(np.pi**2)
 
         # Contract with susc matrix
-        return (g_int.T * susc(T)).T
+        return (g_int.T * self.susc(T)).T
 
     def hat(self, A, U):
         return np.dot(np.conj(U.T), np.dot(A, U))
 
-    def gamma_N(self, z, kc, rt, mp, susc, U, imag=False):
+    def gamma_N(self, z, kc, rt, U, imag=False):
         T = Tz(z, self.mp.M)
+
         G_Nhat = np.array([
             self.hat(np.imag(g), U) if imag else self.hat(np.real(g), U) for g in rt.GBt_N_a(z)])
-        # return (self.Tscale**3)*(2.0 / T) * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', susc(T), tau, G_Nhat)
-        return ((T**3))*(self.Tscale ** 3) * (2.0 / T) * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', susc(T), tau,
+
+        return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
                                                                                       G_Nhat)
 
-    def coefficient_matrix(self, z, quad, mp, susc, smdata):
+    def coefficient_matrix(self, z, quad):
         T = Tz(z, self.mp.M)
 
         # Top left block, only part that doesn't depend on kc.
-        g_nu = -self.gamma_omega(z, susc, quad)
+        g_nu = -self.gamma_omega(z, quad)
 
         top_row = []
         left_col = []
@@ -332,10 +327,9 @@ class TrapezoidalSolverCPI(Solver):
 
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, H_I = [R(z) for R in rt]
 
-            U = self.U(mp, smdata, kc, T)
+            U = self.U(kc, T)
             # U = np.identity(2)
-            # W = (((T/self.Tscale)**3)/(2*(np.pi**2)))*w_i*(kc**2)
-            W = (((1.0 / self.Tscale) ** 3) / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
+            W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
             GBTI_nu_a_hat = [self.hat(np.imag(A), U) for A in GBt_nu_a]
@@ -344,8 +338,8 @@ class TrapezoidalSolverCPI(Solver):
             top_row.append(-W*tr_h(GBTR_nu_a_hat))
 
             # Left col
-            left_col.append(-0.5j*self.gamma_N(z, kc, rt, mp, susc, U, imag=True))
-            left_col.append(-1*self.gamma_N(z, kc, rt, mp, susc, U, imag=False))
+            left_col.append(-0.5j*self.gamma_N(z, kc, rt, U, imag=True))
+            left_col.append(-1*self.gamma_N(z, kc, rt, U, imag=False))
 
             # Diag blocks
             # H_I = HB_N
@@ -379,9 +373,7 @@ class TrapezoidalSolverCPI(Solver):
                 base_col = 3 + 8*j
                 rminus_11 = sol[i, base_col + 4]
                 rminus_22 = sol[i, base_col + 5]
-                # res_i += (1.0/(self.Tscale**3))*((T**3)/(2*(np.pi**2)))*(kc**2)*weight*(rminus_11 + rminus_22)
-                res_i += (1.0 / (self.Tscale ** 3)) * (1.0 / (2 * (np.pi ** 2))) * (kc ** 2) * weight * (
-                            rminus_11 + rminus_22)
+                res_i += (1.0 / (2 * (np.pi ** 2))) * (kc ** 2) * weight * (rminus_11 + rminus_22)
 
             res.append(res_i)
         return np.array(res)
@@ -391,14 +383,13 @@ class TrapezoidalSolverCPI(Solver):
         res = []
 
         for i, z in enumerate(zlist):
-            T = Tz(z, self.mp.M)
             res.append((sol[i, 0] + sol[i, 1] + sol[i, 2]))
 
         return np.array(res)
 
     def solve(self, eigvals=False):
         quad = QuadratureInputs(self.kc_list, trapezoidal_weights(self.kc_list), self.rates)
-        initial_state = self.get_initial_state(self.T0, self.mp, self.smdata, self.kc_list)
+        initial_state = self.get_initial_state()
 
         # Integration bounds
         z0 = zT(self.T0, self.mp.M)
@@ -412,7 +403,7 @@ class TrapezoidalSolverCPI(Solver):
 
         # Construct system of equations
         def f_state(x, z):
-            sysmat = self.coefficient_matrix(z, quad, self.mp, self.susc, self.smdata)
+            sysmat = self.coefficient_matrix(z, quad)
             jac = jacobian(z, self.mp, self.smdata)
             res = jac * (sysmat.dot(x))
 
@@ -430,7 +421,7 @@ class TrapezoidalSolverCPI(Solver):
 
         def jac(x, z):
             return jacobian(z, self.mp, self.smdata) * \
-                   self.coefficient_matrix(z, quad, self.mp, self.susc, self.smdata)
+                   self.coefficient_matrix(z, quad)
 
         # Solve them
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
