@@ -15,10 +15,10 @@ import cProfile
 mp = ModelParams(
     M=1.0,
     dM=1e-11,
-    Imw=np.log(3),
-    Rew=13/16*np.pi,
-    delta= 29/16*np.pi,
-    eta=22/16*np.pi
+    Imw=4.1,
+    Rew=np.pi/4,
+    delta= np.pi,
+    eta=1.5*np.pi
 )
 
 # MN = 1.0 # HNLs mass

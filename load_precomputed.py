@@ -70,13 +70,13 @@ def get_susceptibility_matrix(path):
     :param path: path to file containing tabulated susceptibility data
     :return: (3,3) matrix valued function of T
     '''
-    # Tsus, asus, bsus, csus, dsus = np.loadtxt(path).T
-    # ci = interp1d(Tsus, csus, bounds_error = False, fill_value = (csus[-1], csus[0]))
-    # di = interp1d(Tsus, dsus, bounds_error = False, fill_value = (dsus[-1], dsus[0]))
+    Tsus, asus, bsus, csus, dsus = np.loadtxt(path).T
+    ci = interp1d(Tsus, csus, bounds_error = False, fill_value = (csus[-1], csus[0]))
+    di = interp1d(Tsus, dsus, bounds_error = False, fill_value = (dsus[-1], dsus[0]))
 
-    Tsus, asus, bsus, csus, dsus = np.flipud(np.loadtxt(path)).T
-    ci = fast_interpolant(Tsus, csus)
-    di = fast_interpolant(Tsus, dsus)
+    # Tsus, asus, bsus, csus, dsus = np.flipud(np.loadtxt(path)).T
+    # ci = fast_interpolant(Tsus, csus)
+    # di = fast_interpolant(Tsus, dsus)
 
     # closures are super
     def susc(T):

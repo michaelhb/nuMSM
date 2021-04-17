@@ -326,7 +326,7 @@ class TrapezoidalSolverCPI(Solver):
 
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, H_I = [R(z) for R in rt]
 
-            U = self.U(kc, T)
+            U = self.U(kc, T    )
             # U = np.identity(2)
             W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
@@ -423,9 +423,6 @@ class TrapezoidalSolverCPI(Solver):
                    self.coefficient_matrix(z, quad)
 
         # Solve them
-        start = time.time()
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
-        end = time.time()
-        print("Time (odeint): {}".format(end - start))
         self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
         self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
