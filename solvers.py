@@ -37,29 +37,32 @@ class Solver(ABC):
         """
         pass
 
-    def plot_total_lepton_asymmetry(self):
-        Tlist = Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
+    def plot_total_lepton_asymmetry(self, title=None):
+        Tlist = self.get_Tlist()
         plt.loglog(Tlist, np.abs(self._total_lepton_asymmetry))
         plt.xlabel("T")
         plt.ylabel("lepton asymmetry")
+        plt.title(title)
         plt.show()
 
-    def plot_total_hnl_asymmetry(self):
-        Tlist = Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
+    def plot_total_hnl_asymmetry(self, title=None):
+        Tlist = self.get_Tlist()
         plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry))
         plt.xlabel("T")
         plt.ylabel("hnl asymmetry")
+        plt.title(title)
         plt.show()
 
-    def plot_L_violation(self):
-        Tlist = Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
+    def plot_L_violation(self, title=None):
+        Tlist = self.get_Tlist()
         plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry + self._total_lepton_asymmetry))
         plt.xlabel("T")
         plt.ylabel("L violation")
+        plt.title(title)
         plt.show()
 
     def plot_eigenvalues(self, title=None):
-        Tlist = Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
+        Tlist = self.get_Tlist()
         n_eig = len(self._eigenvalues[0])
 
         plt.xlabel("T")
@@ -83,6 +86,9 @@ class Solver(ABC):
 
     def get_total_hnl_asymmetry(self):
         return self._total_hnl_asymmetry
+
+    def get_Tlist(self):
+        return Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
 
 class AveragedSolver(Solver):
 
@@ -229,10 +235,13 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 
 class TrapezoidalSolverCPI(Solver):
 
-    def __init__(self, model_params, T0, TF, kc_list, H = 1, ode_pars = ode_par_defaults):
+    def __init__(self, model_params, T0, TF, kc_list,
+                 cutoff = None, H = 1, ode_pars = ode_par_defaults, interaction = False):
 
         self.kc_list = kc_list
         self.mp = model_params
+        self.cutoff = cutoff
+        self.interaction = interaction
 
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -263,7 +272,7 @@ class TrapezoidalSolverCPI(Solver):
         E_N = np.sqrt(k**2 + self.mp.M**2)
 
         I = -1*((self.mp.dM * Mstar)/(2*(T**2)))*(E_N/self.mp.M - ((k/self.mp.M)**2)*np.arcsinh((self.mp.M/k)))
-        # I = -1*((mp.dM*mp.M*Mstar)/(3*k*(T**2)))*(1 - (3./10.)*((mp.M/k)**2)) # approx
+        # I = -1*((self.mp.dM*self.mp.M*Mstar)/(3*k*(T**2)))*(1 - (3./10.)*((self.mp.M/k)**2)) # approx
 
         res = np.array([
             [np.cos(I), -1j*np.sin(I)],
@@ -326,8 +335,11 @@ class TrapezoidalSolverCPI(Solver):
 
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, H_I = [R(z) for R in rt]
 
-            U = self.U(kc, T    )
-            # U = np.identity(2)
+            if self.interaction:
+                U = self.U(kc, T)
+            else:
+                U = np.identity(2)
+
             W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
@@ -341,7 +353,9 @@ class TrapezoidalSolverCPI(Solver):
             left_col.append(-1*self.gamma_N(z, kc, rt, U, imag=False))
 
             # Diag blocks
-            # H_I = HB_N
+            if not self.interaction:
+                H_I = HB_N
+
             H_IhatR = self.hat(np.real(H_I), U)
             H_IhatI = self.hat(np.imag(H_I), U)
             GB_NhatI = self.hat(np.imag(GB_N), U)
@@ -352,12 +366,16 @@ class TrapezoidalSolverCPI(Solver):
 
             diag.append(np.block([[b11, b12], [b21, b11]]))
 
-        res = np.block([
+        res = np.real(np.block([
             [g_nu, np.hstack(top_row)],
             [np.vstack(left_col), block_diag(*diag)]
-        ])
+        ]))
 
-        return np.real(res)
+        # Average out fast modes...
+        if self.cutoff:
+            return np.dot(res, np.linalg.inv(-res/self.cutoff + np.eye(3 + 8*n_kc)))
+        else:
+            return res
 
     def calc_hnl_asymmetry(self, sol, zlist, quad):
         res = []
@@ -407,13 +425,14 @@ class TrapezoidalSolverCPI(Solver):
             res = jac * (sysmat.dot(x))
 
             if eigvals:
-                eig = speig((jac*sysmat), right=False, left=True)
-                ix_small = np.argmin(np.abs(eig[0]))
-                eval_small = np.abs(eig[0][ix_small])
-                evec_small = np.abs(eig[1][:,ix_small])
-                print("Smallest Eval: ", eval_small)
-                print("Corresponding left Evec: ", evec_small)
-                print("Normalized: ", evec_small / evec_small[0])
+                # eig = speig((jac*sysmat), right=False, left=True)
+                eig = speig((sysmat), right=False, left=True)
+                # ix_small = np.argmin(np.abs(eig[0]))
+                # eval_small = np.abs(eig[0][ix_small])
+                # evec_small = np.abs(eig[1][:,ix_small])
+                # print("Smallest Eval: ", eval_small)
+                # print("Corresponding left Evec: ", evec_small)
+                # print("Normalized: ", evec_small / evec_small[0])
                 self._eigenvalues.append(eig[0])
 
             return res

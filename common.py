@@ -50,6 +50,11 @@ def Tz(z, M):
 
 def zT(T, M):
     return np.log(M/T)
+# def Tz(z, M):
+#     return Tsph*np.exp(-z)
+#
+# def zT(T, M):
+#     return np.log(Tsph/T)
 
 # def Tz(z, M):
 #     return Tsph*np.exp(-z)

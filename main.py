@@ -12,15 +12,16 @@ import cProfile
 #     eta=3/2 * np.pi
 # )
 #
-mp = ModelParams(
-    M=1.0,
-    dM=1e-11,
-    Imw=4.1,
-    Rew=np.pi/4,
-    delta= np.pi,
-    eta=1.5*np.pi
-)
-
+# mp = ModelParams(
+#     M=1.0,
+#     dM=1e-9,
+#     # Imw=1.0,
+#     Imw=4.1,
+#     Rew=np.pi/4,
+#     delta= np.pi,
+#     eta=1.5*np.pi
+# )
+mp = ModelParams(M=1.0, dM=1e-8, Imw=2.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
 # MN = 1.0 # HNLs mass
 # dM = 1e-12 # mass difference
 #
@@ -40,9 +41,12 @@ mp = ModelParams(
 
 if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
-    # kc_list = [0.5, 1.0, 2.0]
+    # kc_list = np.array([0.5, 1.0, 2.0])
     # kc_list = [1.0]
-    kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
+    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
+    #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
     T0 = get_T0(mp)
     print(T0)
@@ -52,11 +56,14 @@ if __name__ == '__main__':
     start = time.time()
     solver.solve(eigvals=False)
     end = time.time()
+    title = "dM = {}, Imw = {}, n_kc = {}".format(
+        mp.dM, mp.Imw, kc_list.shape[0]
+    )
     print("Time (solve): {}".format(end - start))
-    # solver.plot_eigenvalues()
-    solver.plot_total_lepton_asymmetry()
-    solver.plot_total_hnl_asymmetry()
-    solver.plot_L_violation()
+    # solver.plot_eigenvalues(title)
+    solver.plot_total_lepton_asymmetry(title)
+    # solver.plot_total_hnl_asymmetry(title)
+    # solver.plot_L_violation()
     print("BAU: {:.3e}".format((28./78.) * solver.get_final_lepton_asymmetry()))
 
     print(solver.get_total_hnl_asymmetry() / solver.get_total_lepton_asymmetry())
