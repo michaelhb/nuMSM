@@ -21,7 +21,7 @@ import cProfile
 #     delta= np.pi,
 #     eta=1.5*np.pi
 # )
-mp = ModelParams(M=1.0, dM=1e-8, Imw=2.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
+mp = ModelParams(M=1.0, dM=1e-11, Imw=2.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
 # MN = 1.0 # HNLs mass
 # dM = 1e-12 # mass difference
 #
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     print(T0)
     # solver = AveragedSolver(mp, T0, Tsph, 1, {'rtol' : 1e-7, 'atol' : 1e-17})
     # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, 1, {'rtol': 1e-7, 'atol': 1e-17})
-    solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, 1)
+    solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H = 1, eig_cutoff=True, method="Radau")
     start = time.time()
     solver.solve(eigvals=False)
     end = time.time()
@@ -62,8 +62,8 @@ if __name__ == '__main__':
     print("Time (solve): {}".format(end - start))
     # solver.plot_eigenvalues(title)
     solver.plot_total_lepton_asymmetry(title)
-    # solver.plot_total_hnl_asymmetry(title)
-    # solver.plot_L_violation()
+    solver.plot_total_hnl_asymmetry(title)
+    solver.plot_L_violation()
     print("BAU: {:.3e}".format((28./78.) * solver.get_final_lepton_asymmetry()))
 
     print(solver.get_total_hnl_asymmetry() / solver.get_total_lepton_asymmetry())

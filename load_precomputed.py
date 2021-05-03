@@ -54,39 +54,39 @@ def get_rate_coefficients(path):
     #     interp1d(T, hnldeq, fill_value="extrapolate")
     # )
 
-    # return TDependentRateCoeffs(
-    #     interp1d(T, nugp, fill_value="extrapolate"),
-    #     interp1d(T, nugm, fill_value="extrapolate"),
-    #     interp1d(T, hnlgp, fill_value="extrapolate"),
-    #     interp1d(T, hnlgm, fill_value="extrapolate"),
-    #     interp1d(T, hnlhp, fill_value="extrapolate"),
-    #     interp1d(T, hnlhm, fill_value="extrapolate"),
-    #     interp1d(T, hnlh0, fill_value="extrapolate"),
-    #     interp1d(T, hnldeq, fill_value="extrapolate")
-    # )
     return TDependentRateCoeffs(
-        fast_interpolant(T, nugp),
-        fast_interpolant(T, nugm),
-        fast_interpolant(T, hnlgp),
-        fast_interpolant(T, hnlgm),
-        fast_interpolant(T, hnlhp),
-        fast_interpolant(T, hnlhm),
-        fast_interpolant(T, hnlh0),
-        fast_interpolant(T, hnldeq)
+        interp1d(T, nugp, fill_value="extrapolate"),
+        interp1d(T, nugm, fill_value="extrapolate"),
+        interp1d(T, hnlgp, fill_value="extrapolate"),
+        interp1d(T, hnlgm, fill_value="extrapolate"),
+        interp1d(T, hnlhp, fill_value="extrapolate"),
+        interp1d(T, hnlhm, fill_value="extrapolate"),
+        interp1d(T, hnlh0, fill_value="extrapolate"),
+        interp1d(T, hnldeq, fill_value="extrapolate")
     )
+    # return TDependentRateCoeffs(
+    #     fast_interpolant(T, nugp),
+    #     fast_interpolant(T, nugm),
+    #     fast_interpolant(T, hnlgp),
+    #     fast_interpolant(T, hnlgm),
+    #     fast_interpolant(T, hnlhp),
+    #     fast_interpolant(T, hnlhm),
+    #     fast_interpolant(T, hnlh0),
+    #     fast_interpolant(T, hnldeq)
+    # )
 
 def get_susceptibility_matrix(path):
     '''
     :param path: path to file containing tabulated susceptibility data
     :return: (3,3) matrix valued function of T
     '''
-    # Tsus, asus, bsus, csus, dsus = np.loadtxt(path).T
-    # ci = interp1d(Tsus, csus, bounds_error = False, fill_value = (csus[-1], csus[0]))
-    # di = interp1d(Tsus, dsus, bounds_error = False, fill_value = (dsus[-1], dsus[0]))
+    Tsus, asus, bsus, csus, dsus = np.loadtxt(path).T
+    ci = interp1d(Tsus, csus, bounds_error = False, fill_value = (csus[-1], csus[0]))
+    di = interp1d(Tsus, dsus, bounds_error = False, fill_value = (dsus[-1], dsus[0]))
 
-    Tsus, asus, bsus, csus, dsus = np.flipud(np.loadtxt(path)).T
-    ci = fast_interpolant(Tsus, csus)
-    di = fast_interpolant(Tsus, dsus)
+    # Tsus, asus, bsus, csus, dsus = np.flipud(np.loadtxt(path)).T
+    # ci = fast_interpolant(Tsus, csus)
+    # di = fast_interpolant(Tsus, dsus)
 
     # closures are super
     def susc(T):

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from scipy.integrate import odeint
+from scipy.integrate import odeint, solve_ivp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from common import *
@@ -9,6 +9,7 @@ from rates import get_rates
 from os import path
 from scipy.linalg import block_diag
 from scipy.linalg import eig as speig
+from scipy.sparse.linalg import eigs as sparse_eig
 import time
 
 # ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
@@ -236,12 +237,13 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 class TrapezoidalSolverCPI(Solver):
 
     def __init__(self, model_params, T0, TF, kc_list,
-                 cutoff = None, H = 1, ode_pars = ode_par_defaults, interaction = False):
+                 cutoff = None, H = 1, ode_pars = ode_par_defaults, eig_cutoff = False, method=None):
 
         self.kc_list = kc_list
         self.mp = model_params
         self.cutoff = cutoff
-        self.interaction = interaction
+        self.eig_cutoff = eig_cutoff
+        self.method = method
 
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -263,22 +265,6 @@ class TrapezoidalSolverCPI(Solver):
         self.smdata = get_sm_data(path_SMdata)
 
         Solver.__init__(self, model_params, T0, TF, H, ode_pars)
-
-    # Unitary transform for interaction basis
-    def U(self, kc, T):
-        k = T*kc
-
-        Mstar = 1.22e19 * np.sqrt(45.0 / (4 * (np.pi ** 3) * self.smdata.geff(T)))
-        E_N = np.sqrt(k**2 + self.mp.M**2)
-
-        I = -1*((self.mp.dM * Mstar)/(2*(T**2)))*(E_N/self.mp.M - ((k/self.mp.M)**2)*np.arcsinh((self.mp.M/k)))
-        # I = -1*((self.mp.dM*self.mp.M*Mstar)/(3*k*(T**2)))*(1 - (3./10.)*((self.mp.M/k)**2)) # approx
-
-        res = np.array([
-            [np.cos(I), -1j*np.sin(I)],
-            [-1j*np.sin(I), np.cos(I)]
-        ])
-        return res
 
     # Initial condition
     def get_initial_state(self):
@@ -305,17 +291,13 @@ class TrapezoidalSolverCPI(Solver):
         # Contract with susc matrix
         return (g_int.T * self.susc(T)).T
 
-    def hat(self, A, U):
-        return np.dot(np.conj(U.T), np.dot(A, U))
-
-    def gamma_N(self, z, kc, rt, U, imag=False):
+    def gamma_N(self, z, kc, rt, imag=False):
         T = Tz(z, self.mp.M)
 
-        G_Nhat = np.array([
-            self.hat(np.imag(g), U) if imag else self.hat(np.real(g), U) for g in rt.GBt_N_a(z)])
+        G_N = np.imag(rt.GBt_N_a(z)) if imag else np.real(rt.GBt_N_a(z))
 
         return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
-                                                                                      G_Nhat)
+                                                                                      G_N)
     def coefficient_matrix(self, z, quad):
         T = Tz(z, self.mp.M)
 
@@ -324,9 +306,12 @@ class TrapezoidalSolverCPI(Solver):
 
         top_row = []
         left_col = []
-        diag = []
+        diag_H0 = []
+        diag_HI = []
 
         n_kc = len(quad.kc_list)
+
+        jac = jacobian(z, self.mp, self.smdata)
 
         for i in range(n_kc):
             kc = quad.kc_list[i]
@@ -335,47 +320,49 @@ class TrapezoidalSolverCPI(Solver):
 
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, H_I = [R(z) for R in rt]
 
-            if self.interaction:
-                U = self.U(kc, T)
-            else:
-                U = np.identity(2)
-
             W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
-            GBTI_nu_a_hat = [self.hat(np.imag(A), U) for A in GBt_nu_a]
-            GBTR_nu_a_hat = [self.hat(np.real(A), U) for A in GBt_nu_a]
-            top_row.append(2j*W*tr_h(GBTI_nu_a_hat))
-            top_row.append(-W*tr_h(GBTR_nu_a_hat))
+            top_row.append(2j*W*tr_h(np.imag(GBt_nu_a)))
+            top_row.append(-W*tr_h(np.real(GBt_nu_a)))
 
             # Left col
-            left_col.append(-0.5j*self.gamma_N(z, kc, rt, U, imag=True))
-            left_col.append(-1*self.gamma_N(z, kc, rt, U, imag=False))
+            left_col.append(-0.5j*self.gamma_N(z, kc, rt, imag=True))
+            left_col.append(-1*self.gamma_N(z, kc, rt, imag=False))
+
+            H_0 = HB_N - H_I
 
             # Diag blocks
-            if not self.interaction:
-                H_I = HB_N
+            b11_HI = -1j*Ch(np.real(H_I)) - 0.5*Ah(np.real(GB_N))
+            b12_HI = 0.5*Ch(np.imag(H_I)) - 0.25j*Ah(np.imag(GB_N))
+            b21_HI = 2*Ch(np.imag(H_I)) - 1j*Ah(np.imag(GB_N))
+            diag_HI.append(np.block([[b11_HI, b12_HI], [b21_HI, b11_HI]]))
 
-            H_IhatR = self.hat(np.real(H_I), U)
-            H_IhatI = self.hat(np.imag(H_I), U)
-            GB_NhatI = self.hat(np.imag(GB_N), U)
-            GB_NhatR = self.hat(np.real(GB_N), U)
-            b11 = -1j*Ch(H_IhatR) - 0.5*Ah(GB_NhatR)
-            b12 = 0.5*Ch(H_IhatI) - 0.25j*Ah(GB_NhatI)
-            b21 = 2*Ch(H_IhatI) - 1j*Ah(GB_NhatI)
-
-            diag.append(np.block([[b11, b12], [b21, b11]]))
+            b11_H0 = -1j*Ch(np.real(H_0))
+            b12_H0 = 0.5*Ch(np.imag(H_0))
+            b21_H0 = 2*Ch(np.imag(H_0))
+            diag_H0.append(np.block([[b11_H0, b12_H0], [b21_H0, b11_H0]]))
 
         res = np.real(np.block([
             [g_nu, np.hstack(top_row)],
-            [np.vstack(left_col), block_diag(*diag)]
+            [np.vstack(left_col), block_diag(*diag_HI) + block_diag(*diag_H0)]
         ]))
 
-        # Average out fast modes...
-        if self.cutoff:
-            return np.dot(res, np.linalg.inv(-res/self.cutoff + np.eye(3 + 8*n_kc)))
-        else:
-            return res
+        if self.eig_cutoff:
+            Aprime = np.real(np.block([
+                [np.zeros((3,3)), np.zeros((3,8*n_kc))],
+                [np.zeros((8*n_kc,3)), block_diag(*diag_H0)]
+            ]))
+            cutoff = 1.5*np.abs(sparse_eig(block_diag(*diag_H0), k=1, which="LM", return_eigenvectors=False)[0])
+            res = np.dot(res, np.linalg.inv(-Aprime/cutoff + np.eye(3 + 8*n_kc)))
+
+        return jac*res
+
+        # # Average out fast modes...
+        # if self.cutoff:
+        #     return np.dot(res, np.linalg.inv(-res/self.cutoff + np.eye(3 + 8*n_kc)))
+        # else:
+        #     return res
 
     def calc_hnl_asymmetry(self, sol, zlist, quad):
         res = []
@@ -419,10 +406,9 @@ class TrapezoidalSolverCPI(Solver):
         self._eigenvalues = []
 
         # Construct system of equations
-        def f_state(x, z):
+        def f_state(z, x):
             sysmat = self.coefficient_matrix(z, quad)
-            jac = jacobian(z, self.mp, self.smdata)
-            res = jac * (sysmat.dot(x))
+            res = (sysmat.dot(x))
 
             if eigvals:
                 # eig = speig((jac*sysmat), right=False, left=True)
@@ -437,11 +423,17 @@ class TrapezoidalSolverCPI(Solver):
 
             return res
 
-        def jac(x, z):
-            return jacobian(z, self.mp, self.smdata) * \
-                   self.coefficient_matrix(z, quad)
+        def jac(z, x):
+            return self.coefficient_matrix(z, quad)
 
         # Solve them
-        sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
-        self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
-        self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
+        if self.method == None or self.method == "LSODE":
+            # Default to old odeint / LSODE integrator
+            sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, tfirst=True, **self.ode_pars)
+            self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
+            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
+        else:
+            # Otherwise try solve_ivp
+            sol = solve_ivp(f_state, (z0, zF), y0=initial_state, jac=jac, t_eval=zlist, method=self.method, **self.ode_pars)
+            self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol.y.T, zlist)
+            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, zlist, quad)
