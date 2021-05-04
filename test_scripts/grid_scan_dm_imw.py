@@ -40,17 +40,17 @@ def get_bau(point):
     print("Starting point {}".format(mp))
     T0 = get_T0(mp)
 
-    # if dM < 1e-9:
-    #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=False, ode_pars={'atol' : 1e-9})
-    # else:
-    #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=True, ode_pars={'atol': 1e-9})
-
     if dM < 1e-9:
-        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
-    elif dM < 1e-6:
-        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
+        solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=False, ode_pars={'atol' : 1e-9})
     else:
-        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True, method="Radau", ode_pars={'atol': 1e-10})
+        solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=True, ode_pars={'atol': 1e-9})
+
+    # if dM < 1e-9:
+    #     solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
+    # elif dM < 1e-6:
+    #     solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
+    # else:
+    #     solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True, method="Radau", ode_pars={'atol': 1e-10})
 
     start = time.time()
     solver.solve(eigvals=False)

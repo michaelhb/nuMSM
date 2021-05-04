@@ -53,6 +53,7 @@ if __name__ == '__main__':
     solver = AveragedSolver(mp, T0, Tsph, H=1, eig_cutoff=True)#, ode_pars={'atol' : 1e-10})
     # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, ode_pars={'atol' : 1e-11})
     # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H = 1, eig_cutoff=True, method="Radau")
+
     start = time.time()
     solver.solve(eigvals=False)
     end = time.time()

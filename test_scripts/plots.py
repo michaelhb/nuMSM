@@ -156,8 +156,8 @@ def heatmap_dm_imw(data, axsize, title, outfile):
 # Comparing contour plots
 if __name__ == '__main__':
     output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
-    file_kdep = path.join(output_dir, "20mode_30_full/grid_scan_dm_imw.csv")
-    file_avg = path.join(output_dir, "avg_30_full/grid_scan_dm_imw.csv")
+    file_kdep = path.join(output_dir, "20mode_60_full/grid_scan_dm_imw.csv")
+    file_avg = path.join(output_dir, "avg_60_full/grid_scan_dm_imw.csv")
 
     res_kdep = []
     res_avg = []
@@ -179,4 +179,4 @@ if __name__ == '__main__':
         ("avg", res_avg)
     ]
 
-    contour_dm_imw_comp(data, 30, r'$M = 1.0$ GeV, kdep (20 modes, blue) avg (red)', "output/grid_scan_dm_imw_contours_kdep_vs_avg.png")
+    contour_dm_imw_comp(data, 60, r'$M = 1.0$ GeV, kdep (20 modes, blue) avg (red)', "output/grid_scan_dm_imw_contours_kdep_vs_avg.png")
