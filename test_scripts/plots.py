@@ -154,38 +154,29 @@ def heatmap_dm_imw(data, axsize, title, outfile):
 # Don't use this approach for production plots!
 
 # Comparing contour plots
-# if __name__ == '__main__':
-#     output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
-#     file_kdep_10 = path.join(output_dir, "10mode_51/grid_scan_dm_imw.csv")
-#     file_kdep_20 = path.join(output_dir, "20mode_51/grid_scan_dm_imw.csv")
-#     file_avg = path.join(output_dir, "10mode_51_avg/grid_scan_dm_imw.csv")
-#
-#     res_kdep_10 = []
-#     res_kdep_20 = []
-#     res_avg = []
-#
-#     with open(file_kdep_10, mode="r") as csv_in:
-#         reader = csv.reader(csv_in, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#         for row in reader:
-#             res_kdep_10.append(list(map(float, row)))
-#         res_kdep_10 = np.array(res_kdep_10)
-#
-#     with open(file_kdep_20, mode="r") as csv_in:
-#         reader = csv.reader(csv_in, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#         for row in reader:
-#             res_kdep_20.append(list(map(float, row)))
-#         res_kdep_20 = np.array(res_kdep_20)
-#
-#     with open(file_avg, mode="r") as csv_in:
-#         reader = csv.reader(csv_in, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#         for row in reader:
-#             res_avg.append(list(map(float, row)))
-#         res_avg = np.array(res_avg)
-#
-#     data = [
-#         ("kdep (20)", res_kdep_20),
-#         ("kdep (10)", res_kdep_10),
-#         # ("avg", res_avg)
-#     ]
-#
-#     contour_dm_imw_comp(data, 51, r'$M = 1.0$ GeV, kdep (20 modes, blue) vs kdep (10 modes, red)', "output/grid_scan_dm_imw_contours_kdep20_vs_kdep10.png")
+if __name__ == '__main__':
+    output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
+    file_kdep = path.join(output_dir, "20mode_30_full/grid_scan_dm_imw.csv")
+    file_avg = path.join(output_dir, "avg_30_full/grid_scan_dm_imw.csv")
+
+    res_kdep = []
+    res_avg = []
+
+    with open(file_kdep, mode="r") as csv_in:
+        reader = csv.reader(csv_in, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in reader:
+            res_kdep.append(list(map(float, row)))
+        res_kdep = np.array(res_kdep)
+
+    with open(file_avg, mode="r") as csv_in:
+        reader = csv.reader(csv_in, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in reader:
+            res_avg.append(list(map(float, row)))
+        res_avg = np.array(res_avg)
+
+    data = [
+        ("kdep (20)", res_kdep),
+        ("avg", res_avg)
+    ]
+
+    contour_dm_imw_comp(data, 30, r'$M = 1.0$ GeV, kdep (20 modes, blue) avg (red)', "output/grid_scan_dm_imw_contours_kdep_vs_avg.png")

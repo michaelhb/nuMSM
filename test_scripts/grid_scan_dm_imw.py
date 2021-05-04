@@ -5,9 +5,9 @@ from plots import heatmap_dm_imw, contour_dm_imw
 import csv
 
 # kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
-# kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
-#                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
+# kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
+kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
+                3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
 
 # Returns tuples (dm, imw, ModelParams)
@@ -40,6 +40,11 @@ def get_bau(point):
     print("Starting point {}".format(mp))
     T0 = get_T0(mp)
 
+    # if dM < 1e-9:
+    #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=False, ode_pars={'atol' : 1e-9})
+    # else:
+    #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=True, ode_pars={'atol': 1e-9})
+
     if dM < 1e-9:
         solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
     elif dM < 1e-6:
@@ -59,7 +64,7 @@ if __name__ == '__main__':
     outfile_data = path.join(output_dir, "grid_scan_dm_imw.csv")
 
     # axsize = 51
-    axsize = 5
+    axsize = 60
 
     if not path.exists(outfile_data):
         with Pool(8) as p:

@@ -38,6 +38,9 @@ class Solver(ABC):
         """
         pass
 
+    def get_full_solution(self):
+        return self._full_solution
+
     def plot_total_lepton_asymmetry(self, title=None):
         Tlist = self.get_Tlist()
         plt.loglog(Tlist, np.abs(self._total_lepton_asymmetry))
@@ -93,7 +96,7 @@ class Solver(ABC):
 
 class AveragedSolver(Solver):
 
-    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
+    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, ode_pars = ode_par_defaults):
         super().__init__(model_params, T0, TF, H, ode_pars)
 
         # Load precomputed data files
@@ -107,6 +110,7 @@ class AveragedSolver(Solver):
         self.smdata = get_sm_data(path_SMdata)
         self.rates = get_rates(self.mp, self.tc, self.H)
         self._eigenvalues = []
+        self.eig_cutoff = eig_cutoff
 
     def solve(self, eigvals=False):
 
@@ -129,18 +133,19 @@ class AveragedSolver(Solver):
                 eig = speig((jac*sysmat), right=False, left=True)
                 self._eigenvalues.append(eig[0])
 
-            res = jac*(np.dot(sysmat, x) + self.inhomogeneous_part(z))
+            res = (np.dot(sysmat, x) + self.inhomogeneous_part(z))
             # res = jac * (np.dot(sysmat, x)) # without source term
 
             return res
 
         def jac(x, z):
-            return jacobian(z, self.mp, self.smdata)*self.coefficient_matrix(z)
+            return self.coefficient_matrix(z)
 
         # Solve them
         sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
         self._total_lepton_asymmetry = sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2]
         self._total_hnl_asymmetry = sol[0][:, 7] + sol[0][:, 8]
+        self._full_solution = sol[0]
 
     def get_initial_state(self):
         #equilibrium number density for a relativistic fermion, T = T0
@@ -206,25 +211,54 @@ class AveragedSolver(Solver):
         '''
 
         T = Tz(z, self.mp.M)
-        GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, *_ = [R(z) for R in self.rates]
-        susc = self.susc(T)
+        GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, HB_I = [R(z) for R in self.rates]
 
+        jac = jacobian(z, self.mp, self.smdata)
+
+        HB_0 = HB_N - HB_I
+
+        # Top row
         b11 = -self.gamma_omega(z)*(T**2)/6.
         b12 = 2j*tr_h(np.imag(GBt_nu_a))
         b13 = -tr_h(np.real(GBt_nu_a))
+
+        # Left col
         b21 = -(1j/2.)*self.Yi(z)*(T**2)/6.
-        b22 = -1j*Ch(np.real(HB_N)) - (1./2.)*Ah(np.real(GB_N))
-        b23 = (1./2.)*Ch(np.imag(HB_N)) - (1j/4.)*Ah(np.imag(GB_N))
         b31 = -self.Yr(z)*(T**2)/6.
-        b32 = 2*Ch(np.imag(HB_N)) - 1j*Ah(np.imag(GB_N))
-        b33 = -1j*Ch(np.real(HB_N)) - (1./2.)*Ah(np.real(GB_N))
+
+        # Inner block
+        b22_HI = -1j * Ch(np.real(HB_I)) - (1. / 2.) * Ah(np.real(GB_N))
+        b23_HI = (1. / 2.) * Ch(np.imag(HB_I)) - (1j / 4.) * Ah(np.imag(GB_N))
+        b32_HI = 2 * Ch(np.imag(HB_I)) - 1j * Ah(np.imag(GB_N))
+        b33_HI = b22_HI
+
+        b22_H0 = -1j * Ch(np.real(HB_0))
+        b23_H0 = (1. / 2.) * Ch(np.imag(HB_0))
+        b32_H0 = 2 * Ch(np.imag(HB_0))
+        b33_H0 = b22_H0
 
         res = np.block([
             [b11,b12,b13],
-            [b21,b22,b23],
-            [b31,b32,b33]
+            [b21,b22_H0 + b22_HI,b23_H0 + b23_HI],
+            [b31,b32_H0 + b32_HI,b33_H0 + b33_HI]
         ])
-        return np.real(res)
+
+        if self.eig_cutoff:
+            H0_inner = np.real(np.block([
+                [b22_H0, b23_H0],
+                [b32_H0, b33_H0]
+            ]))
+            # cutoff = 1.5 * np.abs(sparse_eig(H0_inner, k=1, which="LM", return_eigenvectors=False)[0])
+            evs = np.abs(np.linalg.eigvals(H0_inner))
+            cutoff = 1.5*np.sort(evs)[-1]
+
+            Aprime = np.real(np.block([
+                [np.zeros((3,3)), np.zeros((3,8))],
+                [np.zeros((8,3)), H0_inner]
+            ]))
+            res = np.dot(res, np.linalg.inv(-Aprime/cutoff + np.eye(11)))
+
+        return jac*np.real(res)
 
 """
 Data type to describe a quadrature scheme, incl. the list of 
@@ -432,8 +466,10 @@ class TrapezoidalSolverCPI(Solver):
             sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, tfirst=True, **self.ode_pars)
             self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
             self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
+            self._full_solution = sol[0]
         else:
             # Otherwise try solve_ivp
             sol = solve_ivp(f_state, (z0, zF), y0=initial_state, jac=jac, t_eval=zlist, method=self.method, **self.ode_pars)
             self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol.y.T, zlist)
             self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, zlist, quad)
+            self._full_solution = sol.y.T

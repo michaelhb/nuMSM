@@ -14,10 +14,12 @@ if __name__ == '__main__':
     times_std = []
     baus_interaction = []
     times_interacton = []
-    baus_avg = []
-    times_avg = []
     baus_cutoff = []
     times_cutoff = []
+    baus_avg = []
+    times_avg = []
+    baus_avg_cutoff = []
+    times_avg_cutoff = []
 
     for dM in dMs:
         print(dM)
@@ -31,26 +33,33 @@ if __name__ == '__main__':
         # baus_interaction.append((28./78.)*solver_interaction.get_final_lepton_asymmetry())
         # times_interacton.append(end - start)
 
-        solver_std = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, cutoff=None, ode_pars={'atol' : 1e-11})
-        start = time.time()
-        solver_std.solve()
-        end = time.time()
-        baus_std.append((28./78.)*solver_std.get_final_lepton_asymmetry())
-        times_std.append(end - start)
-
-        solver_cutoff = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True)
-        start = time.time()
-        solver_cutoff.solve()
-        end = time.time()
-        baus_cutoff.append((28./78.)*solver_cutoff.get_final_lepton_asymmetry())
-        times_cutoff.append(end - start)
-        #
-        # solver_avg = AveragedSolver(mp, T0, Tsph, H=1, ode_pars={'atol' : 1e-11})
+        # solver_std = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, cutoff=None, ode_pars={'atol' : 1e-11})
         # start = time.time()
-        # solver_avg.solve()
+        # solver_std.solve()
         # end = time.time()
-        # baus_avg.append((28./78.)*solver_avg.get_final_lepton_asymmetry())
-        # times_avg.append(end - start)
+        # baus_std.append((28./78.)*solver_std.get_final_lepton_asymmetry())
+        # times_std.append(end - start)
+        #
+        # solver_cutoff = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True)
+        # start = time.time()
+        # solver_cutoff.solve()
+        # end = time.time()
+        # baus_cutoff.append((28./78.)*solver_cutoff.get_final_lepton_asymmetry())
+        # times_cutoff.append(end - start)
+        #
+        solver_avg = AveragedSolver(mp, T0, Tsph, H=1, eig_cutoff=False, ode_pars={'atol' : 1e-11})
+        start = time.time()
+        solver_avg.solve()
+        end = time.time()
+        baus_avg.append((28./78.)*solver_avg.get_final_lepton_asymmetry())
+        times_avg.append(end - start)
+
+        solver_avg = AveragedSolver(mp, T0, Tsph, H=1, eig_cutoff=True, ode_pars={'atol' : 1e-11})
+        start = time.time()
+        solver_avg.solve()
+        end = time.time()
+        baus_avg_cutoff.append((28./78.)*solver_avg.get_final_lepton_asymmetry())
+        times_avg_cutoff.append(end - start)
 
     title = "BAU & timing comparaison, {} modes, Imw = {}".format(kc_list.shape[0], mp.Imw)
 
@@ -58,10 +67,11 @@ if __name__ == '__main__':
     fig, ax = plt.subplots()
     ax.set_yscale('log')
     ax.set_xscale('log')
-    ax.scatter(dMs, np.abs(baus_cutoff), color="green", alpha=0.5, label="max_eig cutoff", s=5)
-    ax.scatter(dMs, np.abs(baus_std), color="purple", alpha=0.5, label="std picture", s=5)
+    # ax.scatter(dMs, np.abs(baus_cutoff), color="green", alpha=0.5, label="max_eig cutoff", s=5)
+    # ax.scatter(dMs, np.abs(baus_std), color="purple", alpha=0.5, label="std picture", s=5)
     # ax.scatter(dMs, np.abs(baus_interaction), color="blue", alpha=0.5, label="interaction picture", s=5)
-    # ax.scatter(dMs, np.abs(baus_avg), color="red", alpha=0.5, label="momentum averaged", s=5)
+    ax.scatter(dMs, np.abs(baus_avg), color="red", alpha=0.5, label="momentum averaged", s=5)
+    ax.scatter(dMs, np.abs(baus_avg_cutoff), color="orange", alpha=0.5, label="momentum averaged (eig cutoff)", s=5)
     ax.legend()
     plt.title(title)
     plt.xlabel("dM")
@@ -71,10 +81,11 @@ if __name__ == '__main__':
     # Plot times
     fig, ax = plt.subplots()
     ax.set_xscale('log')
-    ax.scatter(dMs, times_cutoff, color="green", alpha=0.5, label="max_eig cutoff", s=5)
+    # ax.scatter(dMs, times_cutoff, color="green", alpha=0.5, label="max_eig cutoff", s=5)
     # ax.scatter(dMs, times_interacton, color="blue", alpha=0.5, label="interaction picture",s=5)
-    ax.scatter(dMs, times_std, color="purple", alpha=0.5, label="std picture", s=5)
-    # ax.scatter(dMs, times_avg, color="red", alpha=0.5, label="momentum averaged", s=5)
+    # ax.scatter(dMs, times_std, color="purple", alpha=0.5, label="std picture", s=5)
+    ax.scatter(dMs, times_avg, color="red", alpha=0.5, label="momentum averaged", s=5)
+    ax.scatter(dMs, times_avg_cutoff, color="orange", alpha=0.5, label="momentum averaged (eig cutoff)", s=5)
     ax.legend()
     plt.title(title)
     plt.xlabel("dM")
