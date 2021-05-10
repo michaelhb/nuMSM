@@ -1,7 +1,10 @@
+from os import path, environ
+environ["MKL_NUM_THREADS"] = "1"
+environ["NUMEXPR_NUM_THREADS"] = "1"
+environ["OMP_NUM_THREADS"] = "1"
 from solvers import *
 from multiprocessing import Pool
-from os import path
-from plots import heatmap_dm_imw, contour_dm_imw
+from plots import heatmap_dm_imw, contour_dm_imw, heatmap_dm_imw_timing
 import csv
 
 # kc_list = np.array([0.5, 1.0, 1.3, 1.5,  1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
@@ -12,13 +15,15 @@ kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
 
 # Returns tuples (dm, imw, ModelParams)
 def get_scan_points(points_per_dim):
-    M = 1.0
+    # M = 1.0
+    M = 10.0
     delta = np.pi
     eta = 3/2 * np.pi
     Rew = 1/4 * np.pi
 
     dM_min = -14
     dM_max = -1
+    # dM_max = -1
     dMs = [10**e for e in np.linspace(dM_min, dM_max, points_per_dim)]
 
     print(dMs)
@@ -40,10 +45,16 @@ def get_bau(point):
     print("Starting point {}".format(mp))
     T0 = get_T0(mp)
 
-    if dM < 1e-9:
-        solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=False, ode_pars={'atol' : 1e-9})
+    # if dM < 1e-9:
+    #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=False, ode_pars={'atol' : 1e-9})
+    # else:
+    #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=True, ode_pars={'atol': 1e-9})
+
+    if (np.abs(Imw) > 4.0):
+        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, ode_pars={'atol': 1e-13}, method="Radau")
     else:
-        solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=True, ode_pars={'atol': 1e-9})
+        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=1e4, ode_pars={'atol': 1e-10},
+                                      method="Radau")
 
     # if dM < 1e-9:
     #     solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
@@ -57,14 +68,14 @@ def get_bau(point):
     end = time.time()
     bau = (28./78.) * solver.get_final_lepton_asymmetry()
     print("Point {} finished in {} s, BAU = {}".format(mp, end - start, bau))
-    return (bau, dM, Imw)
+    return (bau, dM, Imw, end - start)
 
 if __name__ == '__main__':
     output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
     outfile_data = path.join(output_dir, "grid_scan_dm_imw.csv")
 
     # axsize = 51
-    axsize = 60
+    axsize = 5
 
     if not path.exists(outfile_data):
         with Pool(8) as p:
@@ -85,10 +96,12 @@ if __name__ == '__main__':
 
     outfile_heatmap = path.join(output_dir, "grid_scan_dm_imw_heatmap.png")
     outfile_contours = path.join(output_dir, "grid_scan_dm_imw_contours.png")
+    outfile_heatmap_timings = path.join(output_dir, "grid_scan_dm_imw_timings.png")
 
     title = r'$M = 1.0$ GeV'
 
     heatmap_dm_imw(np.array(res), axsize, title, outfile_heatmap)
+    heatmap_dm_imw_timing(np.array(res), axsize, title, outfile_heatmap_timings)
     contour_dm_imw(np.array(res), axsize, title, outfile_contours)
 
     print("Finished!")

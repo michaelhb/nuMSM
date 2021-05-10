@@ -1,5 +1,6 @@
 import numpy as np
 from yukawasCI import FM
+import common
 from common import Rates
 
 """
@@ -40,7 +41,8 @@ def get_rates(mp, tc, H = 1):
          for a in range(3)])
 
     def Tz(z):
-        return mp.M*np.exp(-z)
+        # return mp.M*np.exp(-z)
+        return common.Tz(z, mp.M)
 
     # Construct the integrated rate functions
     def GammaBar_nu_a(z):

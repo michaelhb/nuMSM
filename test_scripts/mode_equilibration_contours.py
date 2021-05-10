@@ -1,13 +1,14 @@
 from solvers import *
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 
 mp = ModelParams(
     M=1.0,
-    dM=1e-6,
-    Imw=5.0,
+    dM=1e-12,
+    Imw=1.0,
     Rew=1/4 * np.pi,
     delta= np.pi,
     eta=3/2 * np.pi
@@ -31,9 +32,9 @@ def get_N1_density(sol, mp, smdata, kc_list, Tlist):
     return res
 
 if __name__ == '__main__':
-    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
-                        3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
+    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
+    #                     3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
     T0 = get_T0(mp)
     TF = 10.
@@ -55,31 +56,25 @@ if __name__ == '__main__':
 
     densities = get_N1_density(sol, mp, solver.smdata, kc_list, Tlist)
 
-    kmin = TF*kc_list[0]
-    kmax = T0*kc_list[-1]
+    Z = []
 
-    # cm_idx = lambda i: (i + 1)/float(T_sample.shape[0])
-    normalize = colors.LogNorm(vmin=TF, vmax=T0)
-    colormap = cm.plasma
+    for T in T_sample:
+        row = []
+        for i in range(kc_list.shape[0]):
+            row.append(densities[i](T))
+        Z.append(row)
 
-    plt.rcParams.update({"text.usetex": False})
-
-    for i, T in enumerate(T_sample):
-        k_list_T = T*kc_list
-        densities_T = []
-
-        for density in densities:
-            densities_T.append(density(T))
-
-        plt.plot(kc_list, densities_T, label="T = {}".format(T), color=colormap(normalize(T)))
-
-    scalarmappable = cm.ScalarMappable(norm=normalize, cmap=colormap)
-    scalarmappable.set_array(T_sample)
-    clb = plt.colorbar(scalarmappable)
-    clb.ax.set_title("T")
-
-    plt.xlabel(r'$k_c$')
-    plt.ylabel(r'$(n_{N_1} - f_N)/f_N$')
+    Z = np.array(Z)
+    fig, ax = plt.subplots()
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xticks(ticks=np.arange(kc_list.shape[0]), labels=kc_list)
+    plt.yticks(ticks=np.arange(T_sample.shape[0]), labels=map(lambda f: "{:.2f}".format(f), T_sample))
+    hm = plt.imshow(Z, cmap='cool', interpolation='nearest')
+    clb = plt.colorbar(hm)
+    clb.ax.set_title(r'$(n_{N_1} - f_N)/f_N$')
+    ax.set_aspect("auto")
+    plt.xlabel("k_c")
+    plt.ylabel("T")
     plt.title("N_1 equilibration, dM = {:.3e}, Imw = {:.2f}, n_kc={}".format(mp.dM, mp.Imw, kc_list.shape[0]))
-    # plt.legend()
+    # plt.tight_layout()
     plt.show()

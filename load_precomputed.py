@@ -97,19 +97,19 @@ def get_susceptibility_matrix(path):
 
 def get_sm_data(path):
     # SM data file is not log-uniform, can't use fast_interpolant :(
-    # Tsm, psm, esm, ssm, csm, wsm, csm, gsm, hsm, ism = np.loadtxt(path).T
-    # Tsm /= 1000
+    Tsm, psm, esm, ssm, csm, wsm, csm, gsm, hsm, ism = np.loadtxt(path).T
+    Tsm /= 1000
     #
-    # sSM = interp1d(Tsm, ssm * Tsm ** 3, assume_sorted=True)
-    # geff = interp1d(Tsm, gsm, fill_value="extrapolate", assume_sorted=True)
+    sSM = interp1d(Tsm, ssm * Tsm ** 3, assume_sorted=True)
+    geff = interp1d(Tsm, gsm, fill_value="extrapolate", assume_sorted=True)
 
-    # Use same approximations as Jurai
-    geff = lambda T : 106.75
-
-    # entropy density
-    @njit
-    def sSM(T):
-        return 106.75 * 2 * np.pi ** 2 * T ** 3 / 45.0
+    # # Use same approximations as Jurai
+    # geff = lambda T : 106.75
+    #
+    # # entropy density
+    # @njit
+    # def sSM(T):
+    #     return 106.75 * 2 * np.pi ** 2 * T ** 3 / 45.0
 
     return SMData(sSM, geff)
 

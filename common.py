@@ -50,17 +50,18 @@ def Tz(z, M):
 
 def zT(T, M):
     return np.log(M/T)
-# def Tz(z, M):
-#     return Tsph*np.exp(-z)
-#
-# def zT(T, M):
-#     return np.log(Tsph/T)
 
 # def Tz(z, M):
 #     return Tsph*np.exp(-z)
 #
 # def zT(T, M):
 #     return np.log(Tsph/T)
+
+def MpStar(z, mp, smdata):
+    Mp = 1.22e19  # Planck mass
+    T = Tz(z, mp.M)
+    geff = smdata.geff(T)
+    return Mp*np.sqrt(45.0/(4*np.pi**3*geff))
 
 '''
 Factor arising from the change of variables T -> z
@@ -72,13 +73,8 @@ def jacobian(z, mp, smdata):
     :param smdata: see common.SMData
     :return: jacobian for transformation T -> Z
     """
-    Mp = 1.22e19  # Planck mass
     T = Tz(z, mp.M)
-    geff = smdata.geff(T)
-    MpStar = Mp*np.sqrt(45.0/(4*np.pi**3*geff))
-    res = MpStar / (T ** 2)
-    return res
-    # return -1.0*mp.M*np.exp(-z)
+    return MpStar(z, mp, smdata) / (T ** 2)
 
 '''
 These are the (interpolated) temperature dependent coefficients 

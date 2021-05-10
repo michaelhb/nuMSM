@@ -24,7 +24,9 @@ class Solver(ABC):
         self.mp = model_params
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None
-        self._eigenvalues = None
+        # self._eigenvalues = None
+        self._eigenvalues = []
+        self._Tlist_eigvals = []
         self.H = H
         self.ode_pars = ode_pars
         super().__init__()
@@ -46,7 +48,8 @@ class Solver(ABC):
         plt.loglog(Tlist, np.abs(self._total_lepton_asymmetry))
         plt.xlabel("T")
         plt.ylabel("lepton asymmetry")
-        plt.title(title)
+        plt.title(title, fontsize=10)
+        # plt.tight_layout()
         plt.show()
 
     def plot_total_hnl_asymmetry(self, title=None):
@@ -66,7 +69,8 @@ class Solver(ABC):
         plt.show()
 
     def plot_eigenvalues(self, title=None):
-        Tlist = self.get_Tlist()
+        # Tlist = self.get_Tlist()
+        Tlist = self._Tlist_eigvals
         n_eig = len(self._eigenvalues[0])
 
         plt.xlabel("T")
@@ -96,12 +100,12 @@ class Solver(ABC):
 
 class AveragedSolver(Solver):
 
-    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, ode_pars = ode_par_defaults):
+    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, fixed_cutoff = None, ode_pars = ode_par_defaults):
         super().__init__(model_params, T0, TF, H, ode_pars)
 
         # Load precomputed data files
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
-        path_rates = path.join(test_data, "rates/Int_ModH_MN10E-1_kcAve.dat")
+        path_rates = path.join(test_data, "rates/Int_OrgH_MN{}E-1_kcAve.dat".format(int(model_params.M*10)))
         path_SMdata = path.join(test_data, "standardmodel.dat")
         path_suscept_data = path.join(test_data, "susceptibility.dat")
 
@@ -111,6 +115,10 @@ class AveragedSolver(Solver):
         self.rates = get_rates(self.mp, self.tc, self.H)
         self._eigenvalues = []
         self.eig_cutoff = eig_cutoff
+        self.fixed_cutoff = fixed_cutoff
+
+        if eig_cutoff and (fixed_cutoff is not None):
+            raise Exception("Cannot use fixed and dynamic cutoff at the same time")
 
     def solve(self, eigvals=False):
 
@@ -132,9 +140,10 @@ class AveragedSolver(Solver):
             if eigvals:
                 eig = speig((jac*sysmat), right=False, left=True)
                 self._eigenvalues.append(eig[0])
+                self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
             res = (np.dot(sysmat, x) + self.inhomogeneous_part(z))
-            # res = jac * (np.dot(sysmat, x)) # without source term
+            # res = (np.dot(sysmat, x)) # without source term
 
             return res
 
@@ -243,14 +252,17 @@ class AveragedSolver(Solver):
             [b31,b32_H0 + b32_HI,b33_H0 + b33_HI]
         ])
 
-        if self.eig_cutoff:
+        if self.eig_cutoff or (self.fixed_cutoff is not None):
             H0_inner = np.real(np.block([
                 [b22_H0, b23_H0],
                 [b32_H0, b33_H0]
             ]))
-            # cutoff = 1.5 * np.abs(sparse_eig(H0_inner, k=1, which="LM", return_eigenvectors=False)[0])
-            evs = np.abs(np.linalg.eigvals(H0_inner))
-            cutoff = 1.5*np.sort(evs)[-1]
+
+            if self.eig_cutoff:
+                evs = np.abs(np.linalg.eigvals(H0_inner))
+                cutoff = 1.5*np.sort(evs)[-1]
+            else:
+                cutoff = self.fixed_cutoff
 
             Aprime = np.real(np.block([
                 [np.zeros((3,3)), np.zeros((3,8))],
@@ -271,19 +283,23 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 class TrapezoidalSolverCPI(Solver):
 
     def __init__(self, model_params, T0, TF, kc_list,
-                 cutoff = None, H = 1, ode_pars = ode_par_defaults, eig_cutoff = False, method=None):
+                 cutoff = None, H = 1, ode_pars = ode_par_defaults, eig_cutoff = False, fixed_cutoff = None, method=None):
 
         self.kc_list = kc_list
         self.mp = model_params
         self.cutoff = cutoff
+        self.fixed_cutoff = fixed_cutoff
         self.eig_cutoff = eig_cutoff
         self.method = method
 
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
 
+        if eig_cutoff and (fixed_cutoff is not None):
+            raise Exception("Cannot use fixed and dynamic cutoff at the same time")
+
         for kc in self.kc_list:
-            fname = 'rates/Int_ModH_MN10E-1_kc{}E-1.dat'.format(int(kc * 10))
+            fname = 'rates/Int_OrgH_MN{}E-1_kc{}E-1.dat'.format(int(self.mp.M*10),int(kc * 10))
             path_rates = path.join(test_data, fname)
             tc = get_rate_coefficients(path_rates)
             rt = get_rates(self.mp, tc, H)
@@ -387,16 +403,35 @@ class TrapezoidalSolverCPI(Solver):
                 [np.zeros((3,3)), np.zeros((3,8*n_kc))],
                 [np.zeros((8*n_kc,3)), block_diag(*diag_H0)]
             ]))
-            cutoff = 1.5*np.abs(sparse_eig(block_diag(*diag_H0), k=1, which="LM", return_eigenvectors=False)[0])
-            res = np.dot(res, np.linalg.inv(-Aprime/cutoff + np.eye(3 + 8*n_kc)))
+            K = 1.5
+            cutoff = K*np.abs(jac*sparse_eig(block_diag(*diag_H0), k=1, which="LM", return_eigenvectors=False)[0])
+            # cutoff = K*np.imag(sparse_eig(block_diag(*diag_H0), k=1, which="LI", return_eigenvectors=False)[0])
+            # return np.dot(jac*res, np.linalg.inv(-jac*Aprime / cutoff + np.eye(3 + 8 * n_kc)))
+            return np.dot(jac*res, np.linalg.inv(-jac*Aprime / cutoff + np.eye(3 + 8 * n_kc)))
+        elif self.fixed_cutoff is not None:
+            Aprime = np.real(np.block([
+                [np.zeros((3,3)), np.zeros((3,8*n_kc))],
+                [np.zeros((8*n_kc,3)), block_diag(*diag_H0)]
+            ]))
+            cutoff = self.fixed_cutoff
+            return np.dot(jac*res, np.linalg.inv(-jac*Aprime/cutoff + np.eye(3 + 8*n_kc)))
+        else:
+            return jac * res
 
-        return jac*res
-
-        # # Average out fast modes...
-        # if self.cutoff:
-        #     return np.dot(res, np.linalg.inv(-res/self.cutoff + np.eye(3 + 8*n_kc)))
-        # else:
-        #     return res
+        ### TESTING NEW CUTOFF IDEA
+        # K = 1e4 # overall scale
+        #
+        # mpStar = MpStar(z, self.mp, self.smdata)
+        # E_N = np.sqrt((T**2)*(self.kc_list**2) + self.mp.M**2)
+        # Tosc = np.power((mpStar*self.mp.M*self.mp.dM)/E_N, 1.0/3.0)
+        # # cutoffs = K*Tosc/Tsph
+        # cutoffs = K*(T**3)*Tosc/Tsph
+        # diag_H0_cutoff = np.einsum("i,ijk->ijk",cutoffs,diag_H0)
+        # Aprime = np.real(np.block([
+        #     [np.zeros((3,3)), np.zeros((3,8*n_kc))],
+        #     [np.zeros((8*n_kc,3)), block_diag(*diag_H0_cutoff)]
+        # ]))
+        # res = np.dot(res, np.linalg.inv(-Aprime + np.eye(3 + 8*n_kc)))
 
     def calc_hnl_asymmetry(self, sol, zlist, quad):
         res = []
@@ -436,8 +471,9 @@ class TrapezoidalSolverCPI(Solver):
         # Output grid
         zlist = np.linspace(z0, zF, 200)
 
-        # Eigenvalues
-        self._eigenvalues = []
+        # # Eigenvalues
+        # self._eigenvalues = []
+        # self._Tlist_eigvals = []
 
         # Construct system of equations
         def f_state(z, x):
@@ -454,6 +490,7 @@ class TrapezoidalSolverCPI(Solver):
                 # print("Corresponding left Evec: ", evec_small)
                 # print("Normalized: ", evec_small / evec_small[0])
                 self._eigenvalues.append(eig[0])
+                self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
             return res
 
