@@ -25,3 +25,7 @@ run ./Int.sh
 file is found in same dir
 
 ##########################################################
+
+DB schema for scanning
+CREATE TABLE points (hash text, tag text, M real, dM real, Imw real, Rew real, delta real, eta real, bau real);
+Hash -> md5 of tag + stringed model params (5 sig figs on model params)

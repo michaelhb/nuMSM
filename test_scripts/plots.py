@@ -173,7 +173,7 @@ def heatmap_dm_imw_timing(data, axsize, title, outfile):
     dm_ticks = np.geomspace(min(dm),max(dm),ax_ticks)
 
     fig, ax = plt.subplots()
-    heatmap = ax.pcolor(time, cmap=plt.cm.viridis, norm=colors.LogNorm(vmin=time_min, vmax=time_max))
+    heatmap = ax.pcolor(time, cmap=plt.cm.viridis)#, norm=colors.LogNorm(vmin=time_min, vmax=time_max))
 
     ax.set_xticks(np.linspace(0, len(imw), ax_ticks))
     ax.set_xticklabels(imw_ticks)
@@ -184,8 +184,8 @@ def heatmap_dm_imw_timing(data, axsize, title, outfile):
 
     cb = plt.colorbar(heatmap, shrink=1, orientation='horizontal')
     cb.set_ticks(time_cb)
-    cb.set_ticklabels(["{:.2e}".format(z) for z in time_cv])
-    cb.set_label("BAU")
+    cb.set_ticklabels(["{:.2f}".format(z) for z in time_cb])
+    cb.set_label("Time (s)")
     # plt.yscale('log')
     plt.tight_layout()
     plt.title(title)

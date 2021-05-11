@@ -75,7 +75,7 @@ if __name__ == '__main__':
     outfile_data = path.join(output_dir, "grid_scan_dm_imw.csv")
 
     # axsize = 51
-    axsize = 5
+    axsize = 30
 
     if not path.exists(outfile_data):
         with Pool(8) as p:

@@ -51,13 +51,13 @@ if __name__ == '__main__':
 
     T0 = get_T0(mp)
     print(T0)
-    cutoff = 1e5
+    cutoff = 1e4
     eig = False
     TF = Tsph
     # max_step = np.abs((T0 - TF)/500)
     # solver = AveragedSolver(mp, T0, TF, H=1, eig_cutoff=False, ode_pars={'atol' : 1e-12})
     solver = TrapezoidalSolverCPI(
-        mp, T0, TF, kc_list, H=1, fixed_cutoff=cutoff, eig_cutoff=eig, method="Radau", ode_pars={'atol' : 1e-10})
+        mp, T0, TF, kc_list, H=1, fixed_cutoff=cutoff, eig_cutoff=eig, method="BDF", ode_pars={'atol' : 1e-10})
     # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, method="BDF", ode_pars={'atol': 1e-11})
     # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H = 1, eig_cutoff=True, method="Radau")
 
