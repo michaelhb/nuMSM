@@ -18,7 +18,7 @@ mpl.rcParams['figure.dpi'] = 300
 
 class Solver(ABC):
 
-    def __init__(self, model_params, T0, TF, H = 1, ode_pars = ode_par_defaults):
+    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, fixed_cutoff = None, ode_pars = ode_par_defaults, method=None):
         self.T0 = T0
         self.TF = TF
         self.mp = model_params
@@ -29,6 +29,13 @@ class Solver(ABC):
         self._Tlist_eigvals = []
         self.H = H
         self.ode_pars = ode_pars
+        self.eig_cutoff = eig_cutoff
+        self.fixed_cutoff = fixed_cutoff
+        self.method = method
+
+        if eig_cutoff and (fixed_cutoff is not None):
+            raise Exception("Cannot use fixed and dynamic cutoff at the same time")
+
         super().__init__()
 
     @abstractmethod
@@ -68,9 +75,13 @@ class Solver(ABC):
         plt.title(title)
         plt.show()
 
-    def plot_eigenvalues(self, title=None):
-        # Tlist = self.get_Tlist()
-        Tlist = self._Tlist_eigvals
+    def plot_eigenvalues(self, title=None, use_z=False):
+        plt.clf()
+        X = self._Tlist_eigvals
+
+        if use_z:
+            X = zT(np.array(X), self.mp.M)
+
         n_eig = len(self._eigenvalues[0])
 
         plt.xlabel("T")
@@ -80,10 +91,15 @@ class Solver(ABC):
 
         for i in range(n_eig):
             y = []
-            for j in range(len(Tlist)):
+            for j in range(len(X)):
                 y.append(np.abs(self._eigenvalues[j][i]))
-            plt.loglog(Tlist, y, '.', markersize=1)
 
+            if use_z:
+                plt.scatter(X, y, '.')#, markersize=1)
+            else:
+                plt.loglog(X, y, '.', markersize=1)
+
+        if use_z: plt.set_yscale("log")
         plt.show()
 
     def get_final_lepton_asymmetry(self):
@@ -100,8 +116,9 @@ class Solver(ABC):
 
 class AveragedSolver(Solver):
 
-    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, fixed_cutoff = None, ode_pars = ode_par_defaults):
-        super().__init__(model_params, T0, TF, H, ode_pars)
+    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, fixed_cutoff = None,
+                 ode_pars = ode_par_defaults, method=None, source_term=True):
+        super().__init__(model_params, T0, TF, H, eig_cutoff, fixed_cutoff, ode_pars, method)
 
         # Load precomputed data files
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -113,12 +130,8 @@ class AveragedSolver(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
         self.rates = get_rates(self.mp, self.tc, self.H)
+        self.use_source_term = source_term
         self._eigenvalues = []
-        self.eig_cutoff = eig_cutoff
-        self.fixed_cutoff = fixed_cutoff
-
-        if eig_cutoff and (fixed_cutoff is not None):
-            raise Exception("Cannot use fixed and dynamic cutoff at the same time")
 
     def solve(self, eigvals=False):
 
@@ -133,7 +146,7 @@ class AveragedSolver(Solver):
         zlist = np.linspace(z0, zF, 200)
 
         # Construct system of equations
-        def f_state(x, z):
+        def f_state(z, x):
             sysmat = self.coefficient_matrix(z)
             jac = jacobian(z, self.mp, self.smdata)
 
@@ -142,19 +155,29 @@ class AveragedSolver(Solver):
                 self._eigenvalues.append(eig[0])
                 self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
-            res = (np.dot(sysmat, x) + self.inhomogeneous_part(z))
-            # res = (np.dot(sysmat, x)) # without source term
+            if self.use_source_term:
+                res = (np.dot(sysmat, x) - self.source_term(z))
+            else:
+                res = np.dot(sysmat, x)
 
             return res
 
-        def jac(x, z):
+        def jac(z, x):
             return self.coefficient_matrix(z)
 
         # Solve them
-        sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, **self.ode_pars)
-        self._total_lepton_asymmetry = sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2]
-        self._total_hnl_asymmetry = sol[0][:, 7] + sol[0][:, 8]
-        self._full_solution = sol[0]
+        if self.method == None or self.method == "LSODE":
+            # Default to old odeint / LSODE integrator
+            sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, tfirst=True, **self.ode_pars)
+            self._total_lepton_asymmetry = sol[0][:, 0] + sol[0][:, 1] + sol[0][:, 2]
+            self._total_hnl_asymmetry = sol[0][:, 7] + sol[0][:, 8]
+            self._full_solution = sol[0]
+        else:
+            # Otherwise try solve_ivp
+            sol = solve_ivp(f_state, (z0, zF), y0=initial_state, jac=jac, t_eval=zlist, method=self.method, **self.ode_pars)
+            self._total_lepton_asymmetry = sol.y.T[:, 0] + sol.y.T[:, 1] + sol.y.T[:, 2]
+            self._total_hnl_asymmetry = sol.y.T[:, 7] + sol.y.T[:, 8]
+            self._full_solution = sol.y.T
 
     def get_initial_state(self):
         #equilibrium number density for a relativistic fermion, T = T0
@@ -200,14 +223,15 @@ class AveragedSolver(Solver):
         imGBt_nu_a = np.imag(self.rates.GBt_N_a(z))
         return np.einsum('kij,aji,ab->kb',tau,imGBt_nu_a,susc)
 
-    def inhomogeneous_part(self, z):
+    def source_term(self, z):
         """
         :param rt: see common.IntegratedRates
         :return: inhomogeneous part of the ODE system
         """
+        jac = jacobian(z, self.mp, self.smdata)
         Seq = self.rates.Seq(z)
         seq = np.einsum('kij,ji->k', tau, Seq)
-        return np.real(np.concatenate([[0, 0, 0], -seq, [0, 0, 0, 0]]))
+        return jac*np.real(np.concatenate([[0, 0, 0], seq, [0, 0, 0, 0]]))
 
     def coefficient_matrix(self, z):
         '''
@@ -268,9 +292,9 @@ class AveragedSolver(Solver):
                 [np.zeros((3,3)), np.zeros((3,8))],
                 [np.zeros((8,3)), H0_inner]
             ]))
-            res = np.dot(res, np.linalg.inv(-Aprime/cutoff + np.eye(11)))
-
-        return jac*np.real(res)
+            return np.dot(jac*res, np.linalg.inv(-jac*Aprime/cutoff + np.eye(11)))
+        else:
+            return jac*np.real(res)
 
 """
 Data type to describe a quadrature scheme, incl. the list of 
@@ -283,20 +307,16 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 class TrapezoidalSolverCPI(Solver):
 
     def __init__(self, model_params, T0, TF, kc_list,
-                 cutoff = None, H = 1, ode_pars = ode_par_defaults, eig_cutoff = False, fixed_cutoff = None, method=None):
+                 cutoff = None, H = 1, ode_pars = ode_par_defaults, eig_cutoff = False,
+                 fixed_cutoff = None, method=None, source_term=True):
 
         self.kc_list = kc_list
         self.mp = model_params
         self.cutoff = cutoff
-        self.fixed_cutoff = fixed_cutoff
-        self.eig_cutoff = eig_cutoff
-        self.method = method
+        self.use_source_term = source_term
 
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
-
-        if eig_cutoff and (fixed_cutoff is not None):
-            raise Exception("Cannot use fixed and dynamic cutoff at the same time")
 
         for kc in self.kc_list:
             fname = 'rates/Int_OrgH_MN{}E-1_kc{}E-1.dat'.format(int(self.mp.M*10),int(kc * 10))
@@ -314,7 +334,7 @@ class TrapezoidalSolverCPI(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
 
-        Solver.__init__(self, model_params, T0, TF, H, ode_pars)
+        Solver.__init__(self, model_params, T0, TF, H, eig_cutoff, fixed_cutoff, ode_pars, method)
 
     # Initial condition
     def get_initial_state(self):
@@ -405,8 +425,6 @@ class TrapezoidalSolverCPI(Solver):
             ]))
             K = 1.5
             cutoff = K*np.abs(jac*sparse_eig(block_diag(*diag_H0), k=1, which="LM", return_eigenvectors=False)[0])
-            # cutoff = K*np.imag(sparse_eig(block_diag(*diag_H0), k=1, which="LI", return_eigenvectors=False)[0])
-            # return np.dot(jac*res, np.linalg.inv(-jac*Aprime / cutoff + np.eye(3 + 8 * n_kc)))
             return np.dot(jac*res, np.linalg.inv(-jac*Aprime / cutoff + np.eye(3 + 8 * n_kc)))
         elif self.fixed_cutoff is not None:
             Aprime = np.real(np.block([
@@ -418,20 +436,27 @@ class TrapezoidalSolverCPI(Solver):
         else:
             return jac * res
 
-        ### TESTING NEW CUTOFF IDEA
-        # K = 1e4 # overall scale
-        #
-        # mpStar = MpStar(z, self.mp, self.smdata)
-        # E_N = np.sqrt((T**2)*(self.kc_list**2) + self.mp.M**2)
-        # Tosc = np.power((mpStar*self.mp.M*self.mp.dM)/E_N, 1.0/3.0)
-        # # cutoffs = K*Tosc/Tsph
-        # cutoffs = K*(T**3)*Tosc/Tsph
-        # diag_H0_cutoff = np.einsum("i,ijk->ijk",cutoffs,diag_H0)
-        # Aprime = np.real(np.block([
-        #     [np.zeros((3,3)), np.zeros((3,8*n_kc))],
-        #     [np.zeros((8*n_kc,3)), block_diag(*diag_H0_cutoff)]
-        # ]))
-        # res = np.dot(res, np.linalg.inv(-Aprime + np.eye(3 + 8*n_kc)))
+    def source_term(self, z, quad):
+        res = [0,0,0]
+        n_kc = len(quad.kc_list)
+        T = Tz(z, self.mp.M)
+        s = self.smdata.s(T)
+        jac = jacobian(z, self.mp, self.smdata)
+
+        for i in range(n_kc):
+            kc = quad.kc_list[i]
+            root = np.sqrt(self.mp.M**2 + (T**2)*(kc**2))
+            exp = np.exp(root/T)
+            S = -T**3*(1.0/s)*(T/MpStar(z, self.mp, self.smdata))*(
+                (root*exp)/((exp + 1)**2))
+            # S = -(1.0/s)*(T/MpStar(z, self.mp, self.smdata))*(
+            #     (root*exp)/((exp + 1)**2))
+            print(S)
+            print(S/(T**3))
+            print("-")
+            res += [S,S,0,0,0,0,0,0]
+        print("====")
+        return jac*np.array(res)
 
     def calc_hnl_asymmetry(self, sol, zlist, quad):
         res = []
@@ -471,26 +496,18 @@ class TrapezoidalSolverCPI(Solver):
         # Output grid
         zlist = np.linspace(z0, zF, 200)
 
-        # # Eigenvalues
-        # self._eigenvalues = []
-        # self._Tlist_eigvals = []
-
         # Construct system of equations
         def f_state(z, x):
             sysmat = self.coefficient_matrix(z, quad)
             res = (sysmat.dot(x))
 
             if eigvals:
-                # eig = speig((jac*sysmat), right=False, left=True)
                 eig = speig((sysmat), right=False, left=True)
-                # ix_small = np.argmin(np.abs(eig[0]))
-                # eval_small = np.abs(eig[0][ix_small])
-                # evec_small = np.abs(eig[1][:,ix_small])
-                # print("Smallest Eval: ", eval_small)
-                # print("Corresponding left Evec: ", evec_small)
-                # print("Normalized: ", evec_small / evec_small[0])
                 self._eigenvalues.append(eig[0])
                 self._Tlist_eigvals.append(Tz(z, self.mp.M))
+
+            if self.use_source_term:
+                res -= self.source_term(z, quad)
 
             return res
 

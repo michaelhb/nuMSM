@@ -11,8 +11,10 @@ import cProfile
 #     delta= np.pi,
 #     eta=3/2 * np.pi
 # )
-mp = ModelParams(M=10.0, dM=1e-2, Imw=0.0, Rew=0.7853981633974483, delta=3.141592653589793,
+mp = ModelParams(M=1.0, dM=1e-9, Imw=2.0, Rew=0.7853981633974483, delta=3.141592653589793,
                  eta=4.71238898038469)
+# mp = ModelParams(M=10.0, dM=0.004520353656360241, Imw=-4.344827586206897, Rew=0.7853981633974483, delta=3.141592653589793,
+#             eta=4.71238898038469)
 # mp = ModelParams(
 #     M=1.0,
 #     dM=1e-9,
@@ -45,21 +47,20 @@ if __name__ == '__main__':
     # kc_list = np.array([0.5, 1.0, 2.0])
     # kc_list = np.array([1.0])
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    # kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
-    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
-                3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
+    kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
+    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
+    #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
     T0 = get_T0(mp)
     print(T0)
-    cutoff = 1e4
+    cutoff = None
     eig = False
     TF = Tsph
-    # max_step = np.abs((T0 - TF)/500)
-    # solver = AveragedSolver(mp, T0, TF, H=1, eig_cutoff=False, ode_pars={'atol' : 1e-12})
+
+    # solver = AveragedSolver(mp, T0, TF, H=1, eig_cutoff=False, ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=True)
     solver = TrapezoidalSolverCPI(
-        mp, T0, TF, kc_list, H=1, fixed_cutoff=cutoff, eig_cutoff=eig, method="BDF", ode_pars={'atol' : 1e-10})
-    # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, method="BDF", ode_pars={'atol': 1e-11})
-    # solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H = 1, eig_cutoff=True, method="Radau")
+        mp, T0, TF, kc_list, H=1, fixed_cutoff=cutoff, eig_cutoff=eig,
+        method="Radau", ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=True)
 
     start = time.time()
     solver.solve(eigvals=True)
@@ -70,6 +71,7 @@ if __name__ == '__main__':
     )
     print("Time (solve): {}".format(end - start))
     solver.plot_eigenvalues(title)
+    # solver.plot_eigenvalues(title, use_z=True)
     solver.plot_total_lepton_asymmetry(title)
     # solver.plot_total_hnl_asymmetry(title)
     # solver.plot_L_violation()

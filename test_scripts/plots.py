@@ -64,6 +64,7 @@ def contour_dm_imw_comp(data, axsize, title, outfile):
     for datum in data:
         color = colors.pop()
 
+
         tag, grid = datum
         bau = grid[:, 0]
         dm = grid[:,1]
@@ -72,15 +73,15 @@ def contour_dm_imw_comp(data, axsize, title, outfile):
         bau = np.reshape(np.array(bau), (axsize, axsize))
         dm = list(dict.fromkeys(dm))
         imw = list(dict.fromkeys(imw))
-
         plt.contour(imw, dm, bau, levels=[-1e-10, 1e-10], linestyles="-", label=tag, colors=color)
 
     plt.ylabel(r'$\Delta M/M$')
     plt.yscale('log')
     plt.xlabel(r'$Im \omega$')
     plt.title(title)
-    plt.legend()
+    # plt.legend()
     plt.tight_layout()
+    print("SAVING")
     plt.savefig(outfile)
 
 def contour_dm_imw(data, axsize, title, outfile):
@@ -109,7 +110,7 @@ def contour_dm_imw(data, axsize, title, outfile):
 def heatmap_dm_imw(data, axsize, title, outfile):
     plt.clf()
 
-    # Data should be np array [[dm, imw, bau],...]
+    # Data should be np array [[bau, dm, imw],...]
     bau = np.abs(data[:,0])
     dm = data[:,1]
     imw = data[:,2]

@@ -51,6 +51,7 @@ class ScanDB:
     def save_bau(self, mp, tag, bau, time):
         c = self.conn.cursor()
         hash = self.get_hash(mp, tag)
+        print("Saving with hash: {}".format(hash))
 
         # Raise exception if record exists
         c.execute('''SELECT bau FROM points WHERE hash = ? ''', (hash,))
@@ -67,6 +68,7 @@ class ScanDB:
         self.conn.commit()
 
     def close_conn(self):
+        self.conn.commit()
         self.conn.close()
 
 
