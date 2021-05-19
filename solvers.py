@@ -18,13 +18,17 @@ mpl.rcParams['figure.dpi'] = 300
 
 class Solver(ABC):
 
-    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, fixed_cutoff = None, ode_pars = ode_par_defaults, method=None):
-        self.T0 = T0
+    def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
+                 ode_pars = ode_par_defaults, method=None, source_term=True):
         self.TF = TF
         self.mp = model_params
+
+        self.T0 = get_T0(self.mp)
+        print("T0: {}".format(self.T0))
+
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None
-        # self._eigenvalues = None
+
         self._eigenvalues = []
         self._Tlist_eigvals = []
         self.H = H
@@ -32,6 +36,7 @@ class Solver(ABC):
         self.eig_cutoff = eig_cutoff
         self.fixed_cutoff = fixed_cutoff
         self.method = method
+        self.use_source_term = source_term
 
         if eig_cutoff and (fixed_cutoff is not None):
             raise Exception("Cannot use fixed and dynamic cutoff at the same time")
@@ -116,13 +121,12 @@ class Solver(ABC):
 
 class AveragedSolver(Solver):
 
-    def __init__(self, model_params, T0, TF, H = 1, eig_cutoff = False, fixed_cutoff = None,
-                 ode_pars = ode_par_defaults, method=None, source_term=True):
-        super().__init__(model_params, T0, TF, H, eig_cutoff, fixed_cutoff, ode_pars, method)
+    def __init__(self, **kwargs):
+        super(AveragedSolver, self).__init__(**kwargs)
 
         # Load precomputed data files
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
-        path_rates = path.join(test_data, "rates/Int_OrgH_MN{}E-1_kcAve.dat".format(int(model_params.M*10)))
+        path_rates = path.join(test_data, "rates/Int_OrgH_MN{}E-1_kcAve.dat".format(int(self.mp.M*10)))
         path_SMdata = path.join(test_data, "standardmodel.dat")
         path_suscept_data = path.join(test_data, "susceptibility.dat")
 
@@ -130,7 +134,6 @@ class AveragedSolver(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
         self.rates = get_rates(self.mp, self.tc, self.H)
-        self.use_source_term = source_term
         self._eigenvalues = []
 
     def solve(self, eigvals=False):
@@ -306,15 +309,10 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 
 class TrapezoidalSolverCPI(Solver):
 
-    def __init__(self, model_params, T0, TF, kc_list,
-                 cutoff = None, H = 1, ode_pars = ode_par_defaults, eig_cutoff = False,
-                 fixed_cutoff = None, method=None, source_term=True):
+    def __init__(self, kc_list, **kwargs):
+        Solver.__init__(self, **kwargs)
 
         self.kc_list = kc_list
-        self.mp = model_params
-        self.cutoff = cutoff
-        self.use_source_term = source_term
-
         self.rates = []
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
 
@@ -322,7 +320,7 @@ class TrapezoidalSolverCPI(Solver):
             fname = 'rates/Int_OrgH_MN{}E-1_kc{}E-1.dat'.format(int(self.mp.M*10),int(kc * 10))
             path_rates = path.join(test_data, fname)
             tc = get_rate_coefficients(path_rates)
-            rt = get_rates(self.mp, tc, H)
+            rt = get_rates(self.mp, tc, self.H)
 
             self.rates.append(rt)
 
@@ -334,7 +332,6 @@ class TrapezoidalSolverCPI(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
 
-        Solver.__init__(self, model_params, T0, TF, H, eig_cutoff, fixed_cutoff, ode_pars, method)
 
     # Initial condition
     def get_initial_state(self):
@@ -451,11 +448,7 @@ class TrapezoidalSolverCPI(Solver):
                 (root*exp)/((exp + 1)**2))
             # S = -(1.0/s)*(T/MpStar(z, self.mp, self.smdata))*(
             #     (root*exp)/((exp + 1)**2))
-            print(S)
-            print(S/(T**3))
-            print("-")
             res += [S,S,0,0,0,0,0,0]
-        print("====")
         return jac*np.array(res)
 
     def calc_hnl_asymmetry(self, sol, zlist, quad):
