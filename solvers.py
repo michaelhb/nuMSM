@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from common import *
 from common import trapezoidal_weights
 from load_precomputed import *
-from rates import get_rates
 from os import path
 from scipy.linalg import block_diag
 from scipy.linalg import eig as speig
@@ -18,10 +17,11 @@ mpl.rcParams['figure.dpi'] = 300
 
 class Solver(ABC):
 
-    def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
+    def __init__(self, model_params=None, rates=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
                  ode_pars = ode_par_defaults, method=None, source_term=True):
         self.TF = TF
         self.mp = model_params
+        self.rates_interface = rates
 
         self.T0 = get_T0(self.mp)
         print("T0: {}".format(self.T0))
@@ -124,16 +124,16 @@ class AveragedSolver(Solver):
     def __init__(self, **kwargs):
         super(AveragedSolver, self).__init__(**kwargs)
 
-        # Load precomputed data files
+        # Load rates
+        self.rates = self.rates_interface.get_averaged_rates()
+
+        # Load standard model data
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
-        path_rates = path.join(test_data, "rates/Int_OrgH_MN{}E-1_kcAve.dat".format(int(self.mp.M*10)))
         path_SMdata = path.join(test_data, "standardmodel.dat")
         path_suscept_data = path.join(test_data, "susceptibility.dat")
-
-        self.tc = get_rate_coefficients(path_rates)
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
-        self.rates = get_rates(self.mp, self.tc, self.H)
+
         self._eigenvalues = []
 
     def solve(self, eigvals=False):
@@ -317,12 +317,7 @@ class TrapezoidalSolverCPI(Solver):
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
 
         for kc in self.kc_list:
-            fname = 'rates/Int_OrgH_MN{}E-1_kc{}E-1.dat'.format(int(self.mp.M*10),int(kc * 10))
-            path_rates = path.join(test_data, fname)
-            tc = get_rate_coefficients(path_rates)
-            rt = get_rates(self.mp, tc, self.H)
-
-            self.rates.append(rt)
+            self.rates.append(self.rates_interface.get_rates(kc))
 
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
 

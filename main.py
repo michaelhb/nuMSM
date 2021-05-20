@@ -1,7 +1,7 @@
 from solvers import *
-from rates import get_rates as get_rates_1
 import time
 import cProfile
+from rates import Rates_Fortran
 #
 # mp = ModelParams(
 #     M=1.0,
@@ -57,10 +57,12 @@ if __name__ == '__main__':
     use_source_term = False
     TF = Tsph
 
-    # solver = AveragedSolver(model_params=mp, TF=TF, H=1, eig_cutoff=False,
+    rates = Rates_Fortran(mp,1)
+
+    # solver = AveragedSolver(model_params=mp, rates=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=use_source_term)
     solver = TrapezoidalSolverCPI(kc_list,
-        model_params=mp, TF=TF,  H=1, fixed_cutoff=cutoff, eig_cutoff=eig,
+        model_params=mp, rates=rates, TF=TF,  H=1, fixed_cutoff=cutoff, eig_cutoff=eig,
         method="Radau", ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=use_source_term)
 
     start = time.time()
