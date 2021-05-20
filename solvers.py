@@ -203,7 +203,7 @@ class AveragedSolver(Solver):
         :return: (3,3) matrix which mixes the n_delta in the upper left corner of the evolution matrix,
         proportional to T^2/6: -Re(GammaBar_nu_alpha).omega_alpha_beta (no sum over alpha)
         """
-        GB_nu_a = self.rates.GB_nu_a(z)
+        GB_nu_a = self.rates.Gamma_nu_a(z)
         return (GB_nu_a.T * self.susc(Tz(z, self.mp.M))).T
 
     def Yr(self, z):
@@ -213,8 +213,8 @@ class AveragedSolver(Solver):
         :return: (4,3) matrix appearing in the (3,1) block of the evolution matrix
         """
         susc = self.susc(Tz(z, self.mp.M))
-        reGBt_nu_a = np.real(self.rates.GBt_N_a(z))
-        return np.einsum('kij,aji,ab->kb',tau,reGBt_nu_a,susc)
+        reGBt_N_a = np.real(self.rates.GammaTilde_N_a(z))
+        return np.einsum('kij,aji,ab->kb',tau,reGBt_N_a,susc)
 
     def Yi(self, z):
         """
@@ -223,8 +223,8 @@ class AveragedSolver(Solver):
         :return: (4,3) matrix appearing in the (2,1) block of the evolution matrix
         """
         susc = self.susc(Tz(z, self.mp.M))
-        imGBt_nu_a = np.imag(self.rates.GBt_N_a(z))
-        return np.einsum('kij,aji,ab->kb',tau,imGBt_nu_a,susc)
+        imGBt_N_a = np.imag(self.rates.GammaTilde_N_a(z))
+        return np.einsum('kij,aji,ab->kb',tau,imGBt_N_a,susc)
 
     def source_term(self, z):
         """
@@ -247,7 +247,7 @@ class AveragedSolver(Solver):
         '''
 
         T = Tz(z, self.mp.M)
-        GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, HB_I = [R(z) for R in self.rates]
+        GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, HB_I,  GB_N, Seq = [R(z) for R in self.rates]
 
         jac = jacobian(z, self.mp, self.smdata)
 
@@ -351,7 +351,7 @@ class TrapezoidalSolverCPI(Solver):
         # Integrate rate
         g_int = np.zeros(3, dtype="complex128")
         for wi, rt, kc in zip(quad.weights, quad.rates, quad.kc_list):
-            g_int += wi*(kc**2)*rt.GB_nu_a(z)*f_nu(kc)*(1 - f_nu(kc))
+            g_int += wi*(kc**2)*rt.Gamma_nu_a(z)*f_nu(kc)*(1 - f_nu(kc))
 
         g_int *= (T**2)/(np.pi**2)
 
@@ -361,7 +361,7 @@ class TrapezoidalSolverCPI(Solver):
     def gamma_N(self, z, kc, rt, imag=False):
         T = Tz(z, self.mp.M)
 
-        G_N = np.imag(rt.GBt_N_a(z)) if imag else np.real(rt.GBt_N_a(z))
+        G_N = np.imag(rt.GammaTilde_N_a(z)) if imag else np.real(rt.GammaTilde_N_a(z))
 
         return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
                                                                                       G_N)
@@ -385,7 +385,7 @@ class TrapezoidalSolverCPI(Solver):
             rt = quad.rates[i]
             w_i = quad.weights[i]
 
-            GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, GB_N, Seq, H_I = [R(z) for R in rt]
+            GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, H_I, GB_N, Seq = [R(z) for R in rt]
 
             W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 

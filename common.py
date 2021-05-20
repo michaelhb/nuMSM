@@ -13,20 +13,6 @@ Tsph = 131.7
 ''' riemann zeta(3) '''
 zeta3 = 1.20206
 
-'''
-Each of these should be a function 
-of z == ln(M_N/T). 
-'''
-Rates = namedtuple('Rates', [
-    "GB_nu_a", # (3)
-    "GBt_nu_a", # (3,2,2)
-    "GBt_N_a",  # (3,2,2)
-    "HB_N", # (2,2)
-    "GB_N", # (2,2)
-    "Seq", # (2,2)
-    "H_I"], # (2,2)
-    defaults=[None, None, None, None, None, None, None]
-)
 
 def get_T0(mp):
     '''

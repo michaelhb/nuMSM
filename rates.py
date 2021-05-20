@@ -1,8 +1,24 @@
 import numpy as np
 from yukawasCI import FM
 import common
-from common import Rates
+# from common import Rates
+from collections import namedtuple
 
+'''
+Each of these should be a function 
+of z == ln(M_N/T). 
+'''
+Rates = namedtuple('Rates', [
+    "Gamma_nu_a", # (3)
+    "GammaTilde_nu_a", # (3,2,2)
+    "GammaTilde_N_a",  # (3,2,2)
+    "Hamiltonian_N", # (2,2)
+    "Hamiltonian_N_Int",
+    "Gamma_N", # (2,2)
+    "Seq", # (2,2)
+    ], # (2,2)
+    defaults=[None, None, None, None, None, None, None]
+)
 """
 Given the temp dependent rate coefficients and model parameters,
 construct the momentum-averaged rate matrices (as functions of z).
@@ -45,38 +61,38 @@ def get_rates(mp, tc, H = 1):
         return common.Tz(z, mp.M)
 
     # Construct the integrated rate functions
-    def GammaBar_nu_a(z):
+    def Gamma_nu_a(z):
         return np.array([hhc[a]*(tc.nugp(Tz(z)) + tc.nugm(Tz(z))) for a in range(3)])
 
-    def GammaBarTilde_nu_a(z):
+    def GammaTilde_nu_a(z):
         # return np.array([-tc.nugp(Tz(z))*YNplus[a].T + tc.nugm(Tz(z))*YNminus[a].T for a in range(3)])
         res = np.array([-tc.hnlgp(Tz(z)) * YNplus[a].T + tc.hnlgm(Tz(z)) * YNminus[a].T for a in range(3)])
         return res
 
-    def HamiltonianBar_N(z):
+    def Hamiltonian_N(z):
         return mp.dM*np.array([[0,1],[1,0]])*tc.hnlh0(Tz(z)) \
             + tc.hnlhp(Tz(z))*np.sum(YNplus, axis=0) \
             + tc.hnlhm(Tz(z))*np.sum(YNminus, axis=0)
 
-    def GammaBar_N(z):
+    def Gamma_N(z):
         return tc.hnlgp(Tz(z))*np.sum(YNplus, axis=0) + tc.hnlgm(Tz(z))*np.sum(YNminus, axis=0)
 
-    def GammaBarTilde_N_a(z):
+    def GammaTilde_N_a(z):
         # return np.array([-tc.hnlgp(Tz(z))*YNplus[a] + tc.hnlgm(Tz(z))*YNminus[a] for a in range(3)])
         return np.array([-tc.nugp(Tz(z)) * YNplus[a] + tc.nugm(Tz(z)) * YNminus[a] for a in range(3)])
 
     def Seq(z):
         return tc.hnldeq(Tz(z))*np.identity(2)
 
-    def H_I(z):
+    def Hamiltonian_N_Int(z):
         return tc.hnlhp(Tz(z))*np.sum(YNplus, axis=0) + tc.hnlhm(Tz(z))*np.sum(YNminus, axis=0)
 
     return Rates(
-        GammaBar_nu_a,
-        GammaBarTilde_nu_a,
-        GammaBarTilde_N_a,
-        HamiltonianBar_N,
-        GammaBar_N,
-        Seq,
-        H_I
+        Gamma_nu_a,
+        GammaTilde_nu_a,
+        GammaTilde_N_a,
+        Hamiltonian_N,
+        Hamiltonian_N_Int,
+        Gamma_N,
+        Seq
     )
