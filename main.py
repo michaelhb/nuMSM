@@ -1,7 +1,7 @@
 from solvers import *
 import time
 import cProfile
-from rates import Rates_Fortran
+from rates import Rates_Fortran, Rates_Jurai
 #
 # mp = ModelParams(
 #     M=1.0,
@@ -12,7 +12,7 @@ from rates import Rates_Fortran
 #     delta= np.pi,
 #     eta=3/2 * np.pi
 # )
-mp = ModelParams(M=1.0, dM=1e-12, Imw=2.0, Rew=0.7853981633974483, delta=3.141592653589793,
+mp = ModelParams(M=1.0, dM=1e-11, Imw=3.0, Rew=0.7853981633974483, delta=3.141592653589793,
                  eta=4.71238898038469)
 # mp = ModelParams(M=10.0, dM=0.004520353656360241, Imw=-4.344827586206897, Rew=0.7853981633974483, delta=3.141592653589793,
 #             eta=4.71238898038469)
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
     # kc_list = np.array([0.5, 1.0, 2.0])
     # kc_list = np.array([1.0])
-    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
+    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    # kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
     #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
@@ -58,6 +58,7 @@ if __name__ == '__main__':
     TF = Tsph
 
     rates = Rates_Fortran(mp,1)
+    # rates = Rates_Jurai(mp, 1, kc_list)
 
     # solver = AveragedSolver(model_params=mp, rates=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=use_source_term)

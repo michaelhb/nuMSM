@@ -31,17 +31,17 @@ def f_nu(kc):
 def f_N(T, M, kc):
     return 1.0/(np.exp(np.sqrt(M**2 + (T**2)*(kc**2))/T) + 1.0)
 
-def Tz(z, M):
-    return M*np.exp(-z)
-
-def zT(T, M):
-    return np.log(M/T)
-
 # def Tz(z, M):
-#     return Tsph*np.exp(-z)
+#     return M*np.exp(-z)
 #
 # def zT(T, M):
-#     return np.log(Tsph/T)
+#     return np.log(M/T)
+#
+def Tz(z, M):
+    return Tsph*np.exp(-z)
+
+def zT(T, M):
+    return np.log(Tsph/T)
 
 def MpStar(z, mp, smdata):
     Mp = 1.22e19  # Planck mass

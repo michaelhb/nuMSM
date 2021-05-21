@@ -7,6 +7,8 @@ import numpy as np
 from yukawasCI import FM
 from os import path
 
+from leptotools.momentumDep import interpHFast, interpFast
+
 '''
 These are the (interpolated) temperature dependent coefficients 
 that are multiplied by the model dependent parts to get the 
@@ -158,4 +160,45 @@ class Rates_Fortran(Rates_Interface):
             interp1d(T, hnlh0, fill_value="extrapolate"),
             interp1d(T, hnldeq, fill_value="extrapolate")
         )
+
+
+class Rates_Jurai(Rates_Interface):
+
+    def __init__(self, mp, H, kc_list):
+        self.mp = mp
+        self.H = H
+        self.kc_list = kc_list
+
+        gP_, gM_ = interpFast(mp.M, kc_list)
+        hP_, hM_ = interpHFast(mp.M, kc_list)
+
+        # We will need caching to retain the efficiency boost from 2D interpolation
+        self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(common.zT(T, mp.M)))
+        self.gM_all = lru_cache(maxsize=None)(lambda T: gM_(common.zT(T, mp.M)))
+        self.hP_all = lru_cache(maxsize=None)(lambda T: hP_(common.zT(T, mp.M)))
+        self.hM_all = lru_cache(maxsize=None)(lambda T: hM_(common.zT(T, mp.M)))
+
+
+    @lru_cache(maxsize=None)
+    def get_averaged_rates(self):
+        raise Exception("This class does not support averaged rates (yet!)")
+
+    @lru_cache(maxsize=None)
+    def get_rates(self, kc):
+        assert(kc in self.kc_list)
+        ix = self.kc_list.tolist().index(kc)
+
+        gP = lambda T: self.gP_all(T)[ix]*1e3
+        gM = lambda T: self.gM_all(T)[ix]*1e3
+        hP = lambda T: self.hP_all(T)[ix]*1e3
+        hM = lambda T: self.hM_all(T)[ix]*1e3
+        h0 = lambda T: -self.mp.M/np.sqrt((kc*T)**2 + self.mp.M**2)
+        hnldeq = lambda T: 0 # Don't call this!
+
+        tc = TDependentRateCoeffs(
+            nugp=gP, nugm=gM, hnlgp=gP, hnlgm=gM, hnlhp=hP, hnlhm=hM,
+            hnlh0=h0, hnldeq=hnldeq
+        )
+
+        return rates_from_tc(tc, self.mp, self.H)
 
