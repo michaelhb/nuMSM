@@ -188,10 +188,10 @@ class Rates_Jurai(Rates_Interface):
         assert(kc in self.kc_list)
         ix = self.kc_list.tolist().index(kc)
 
-        gP = lambda T: self.gP_all(T)[ix]*1e3
-        gM = lambda T: self.gM_all(T)[ix]*1e3
-        hP = lambda T: self.hP_all(T)[ix]*1e3
-        hM = lambda T: self.hM_all(T)[ix]*1e3
+        gP = lambda T: self.gP_all(T)[ix] * T
+        gM = lambda T: self.gM_all(T)[ix] * T
+        hP = lambda T: self.hP_all(T)[ix] * T
+        hM = lambda T: self.hM_all(T)[ix] * T
         h0 = lambda T: -self.mp.M/np.sqrt((kc*T)**2 + self.mp.M**2)
         hnldeq = lambda T: 0 # Don't call this!
 

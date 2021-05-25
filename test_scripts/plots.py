@@ -54,6 +54,9 @@ def lepton_asymmetry_comp(data, title, outfile):
 #     plt.tight_layout()
 #     plt.savefig(outfile)
 
+def bau_rdiff_heatmap(data, axsize, title, outfile):
+    pass
+
 def contour_dm_imw_comp(data, axsize, title, outfile):
     plt.clf()
 
@@ -63,7 +66,6 @@ def contour_dm_imw_comp(data, axsize, title, outfile):
 
     for datum in data:
         color = colors.pop()
-
 
         tag, grid = datum
         bau = grid[:, 0]

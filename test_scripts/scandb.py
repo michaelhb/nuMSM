@@ -30,7 +30,7 @@ class ScanDB:
         self.conn.commit()
 
     def get_hash(self, mp, tag):
-        hash_str = "M: {:.5f}, dM: {:.5e}, Imw: {:.5f}, Rew: {:.5f}, delta: {:.5f}, eta: {:.5f}, tag: ".format(
+        hash_str = "M: {:.5f}, dM: {:.5e}, Imw: {:.5f}, Rew: {:.5f}, delta: {:.5f}, eta: {:.5f}, tag: {}".format(
             mp.M, mp.dM, mp.Imw, mp.Rew, mp.delta, mp.eta, tag
         )
         return hashlib.md5(hash_str.encode()).hexdigest()
