@@ -164,13 +164,13 @@ class Rates_Fortran(Rates_Interface):
 
 class Rates_Jurai(Rates_Interface):
 
-    def __init__(self, mp, H, kc_list):
+    def __init__(self, mp, H, kc_list, tot=True):
         self.mp = mp
         self.H = H
         self.kc_list = kc_list
 
-        gP_, gM_ = interpFast(mp.M, kc_list)
-        hP_, hM_ = interpHFast(mp.M, kc_list)
+        gP_, gM_ = interpFast(mp.M, kc_list, tot)
+        hP_, hM_ = interpHFast(mp.M, kc_list, tot)
 
         # We will need caching to retain the efficiency boost from 2D interpolation
         self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(common.zT(T, mp.M)))

@@ -5,9 +5,10 @@ environ["OMP_NUM_THREADS"] = "1"
 environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 from scandb import ScanDB
 from rates import Rates_Fortran, Rates_Jurai
+from plots import bau_rdiff_heatmap
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -42,10 +43,11 @@ def get_bau(point):
     elif tag == "jurai":
         rates = Rates_Jurai(mp, 1, kc_list)
 
-    if (np.abs(Imw) > 5.0):
-        fixed_cutoff = None
-    else:
-        fixed_cutoff = 1e4
+    # if (np.abs(Imw) > 5.0):
+    #     fixed_cutoff = None
+    # else:
+    #     fixed_cutoff = 1e4
+    fixed_cutoff = 1e4
 
     solver = TrapezoidalSolverCPI(kc_list,
         model_params=mp, rates=rates, TF=Tsph,  H=1, fixed_cutoff=fixed_cutoff, eig_cutoff=False,
@@ -100,11 +102,14 @@ if __name__ == '__main__':
 
     db.close_conn() # No longer need this connection
 
-    with Pool(8) as p:
+    with get_context("spawn").Pool() as p:
         res_scan_jurai = p.map(get_bau, points_scan_jurai)
         res_scan_fortran = p.map(get_bau, points_scan_fortran)
 
     res_fortran = sorted(res_cache_fortran + res_scan_fortran, key=lambda r: (r[1], r[2]))
     res_jurai = sorted(res_cache_jurai + res_scan_jurai, key=lambda r: (r[1], r[2]))
+
+    outfile_comp = path.join(output_dir, "grid_scan_dm_imw_new_rates_rdiff.png")
+    bau_rdiff_heatmap(res_fortran, res_jurai, axsize, "Fortran vs. new rates: rdiff", outfile_comp)
 
     print("DONE!")

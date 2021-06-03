@@ -2,6 +2,8 @@ from os import path, environ
 environ["MKL_NUM_THREADS"] = "1"
 environ["NUMEXPR_NUM_THREADS"] = "1"
 environ["OMP_NUM_THREADS"] = "1"
+environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
+                           "intra_op_parallelism_threads=1")
 from solvers import *
 from multiprocessing import Pool, set_start_method
 from plots import heatmap_dm_imw, contour_dm_imw, heatmap_dm_imw_timing, contour_dm_imw_comp
@@ -32,6 +34,7 @@ def get_bau(point):
 
     print("Starting {} point {}".format(tag, mp))
     T0 = get_T0(mp)
+
 
     if tag == "std":
         if (np.abs(Imw) > 5.0):

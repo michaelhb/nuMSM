@@ -54,12 +54,50 @@ def lepton_asymmetry_comp(data, title, outfile):
 #     plt.tight_layout()
 #     plt.savefig(outfile)
 
-def bau_rdiff_heatmap(data, axsize, title, outfile):
-    pass
+def bau_rdiff_heatmap(data1, data2, axsize, title, outfile):
+    plt.clf()
+
+    bau1 = data1[:, 0]
+    bau2 = data2[:, 0]
+    rdiff = np.abs((bau1 - bau2) / (bau1 + bau2))
+    rdiff_min = min(rdiff)
+    rdiff_max = max(rdiff)
+
+    dm = data1[:, 1]
+    imw = data1[:, 2]
+
+    rdiff = np.reshape(np.array(rdiff), (axsize, axsize))
+    dm = list(dict.fromkeys(dm))
+    imw = list(dict.fromkeys(imw))
+
+    ax_ticks = 7
+    imw_ticks = np.linspace(min(imw),max(imw),ax_ticks)
+    dm_ticks = np.geomspace(min(dm),max(dm),ax_ticks)
+    rdiff_cb = np.geomspace(rdiff_min, rdiff_max, ax_ticks)
+
+    fig, ax = plt.subplots()
+    heatmap = ax.pcolor(rdiff, cmap=plt.cm.viridis, norm=colors.LogNorm(vmin=rdiff_min, vmax=rdiff_max))
+
+    ax.set_xticks(np.linspace(0, len(imw), ax_ticks))
+    ax.set_xticklabels(imw_ticks)
+    ax.set_yticks(np.linspace(0, len(dm), ax_ticks))
+    ax.set_yticklabels(["{:.3e}".format(y) for y in dm_ticks])
+    ax.set_xlabel("$Im(\omega)$ / GeV")
+    ax.set_ylabel("$dM / GeV$")
+
+    cb = plt.colorbar(heatmap, shrink=1, orientation='horizontal')
+    cb.set_ticks(rdiff_cb)
+    cb.set_ticklabels(["{:.2e}".format(z) for z in rdiff_cb])
+    cb.set_label("rdiff")
+    # plt.yscale('log')
+    plt.tight_layout()
+    plt.title(title)
+
+    plt.savefig(outfile)
+
 
 def contour_dm_imw_comp(data, axsize, title, outfile):
     plt.clf()
-
     # Data should be list of tuples [(tag, [[dm, imw, bau],...]),...]
 
     colors = ["green", "purple", "red", "midnightblue"]
@@ -192,7 +230,6 @@ def heatmap_dm_imw_timing(data, axsize, title, outfile):
     # plt.yscale('log')
     plt.tight_layout()
     plt.title(title)
-
     plt.savefig(outfile)
 
 # Various __main__ functions - custom plots while experimenting with code.
