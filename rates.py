@@ -170,7 +170,7 @@ class Rates_Jurai(Rates_Interface):
         self.kc_list = kc_list
 
         gP_, gM_ = interpFast(mp.M, kc_list, tot)
-        hP_, hM_ = interpHFast(mp.M, kc_list, tot)
+        hP_, hM_ = interpHFast(mp.M, kc_list)
 
         # We will need caching to retain the efficiency boost from 2D interpolation
         self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(common.zT(T, mp.M)))
