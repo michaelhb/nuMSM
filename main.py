@@ -10,67 +10,39 @@ import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
 mp = ModelParams(
-    M=1.0,
-    dM=1e-12,
+    M=2.0,
+    dM=3e-5,
     # dM=0,
-    Imw=1.0,
+    Imw=4.1,
     Rew=1/4 * np.pi,
     delta= np.pi,
     eta=3/2 * np.pi
 )
-# mp = ModelParams(M=1.0, dM=0.1, Imw=5.142857142857142, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
-# mp = ModelParams(M=10.0, dM=0.004520353656360241, Imw=-4.344827586206897, Rew=0.7853981633974483, delta=3.141592653589793,
-#             eta=4.71238898038469)
-# mp = ModelParams(
-#     M=1.0,
-#     dM=1e-9,
-#     # Imw=1.0,
-#     Imw=4.1,
-#     Rew=np.pi/4,
-#     delta= np.pi,
-#     eta=1.5*np.pi
-# )
-# mp = ModelParams(M=10.0, dM=5.6234132519034906e-11, Imw=-6.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
-# MN = 1.0 # HNLs mass
-# dM = 1e-12 # mass difference
-#
-# imw = np.log(3)
-# rew = 13/16*pi
-# delta = 29/16*pi
-# eta = 22/16*pi
-
-# MN = 1.0 # HNLs mass
-# dM = 1e-12 # mass difference
-# imw = 0.5
-# rew = 0.3*pi
-# delta = pi
-# eta = 3/2*pi
-
-# mp = ModelParams(M=1.0, dM=1e-12, Imw=0.5, Rew=0.8*np.pi, delta=np.pi, eta=3/2*np.pi)
 
 if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
     # kc_list = np.array([0.5, 1.0, 2.0])
     # kc_list = np.array([1.0])
-    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    kc_list = np.array([0.8, 1.6, 2.4, 3.2, 4. , 4.8, 5.6, 6.4, 7.2, 8.])
     # kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
     #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
-    cutoff = None
+    cutoff = 1e5
     eig = False
     use_source_term = False
     TF = Tsph
-    # ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
-    ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
+    ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
+    # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
-    rates = Rates_Fortran(mp,1)
-    # rates = Rates_Jurai(mp, 1, kc_list)
+    # rates = Rates_Fortran(mp,1)
+    rates = Rates_Jurai(mp, 1, kc_list, tot=True)
 
     # solver = AveragedSolver(model_params=mp, rates=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars=ode_pars, source_term=use_source_term)
     solver = TrapezoidalSolverCPI(kc_list,
-        model_params=mp, rates=rates, TF=TF,  H=1, fixed_cutoff=cutoff, eig_cutoff=eig,
+        model_params=mp, rates=rates, TF=TF,  H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
         method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()
