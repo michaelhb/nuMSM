@@ -6,12 +6,13 @@ environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
 import time
+from quadrature import TrapezoidalQuadrature
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
 mp = ModelParams(
     M=2.0,
-    dM=3e-5,
+    dM=1e-12,
     # dM=0,
     Imw=4.1,
     Rew=1/4 * np.pi,
@@ -33,16 +34,17 @@ if __name__ == '__main__':
     eig = False
     use_source_term = False
     TF = Tsph
-    ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
-    # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
+    # ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
+    ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
     # rates = Rates_Fortran(mp,1)
     rates = Rates_Jurai(mp, 1, kc_list, tot=True)
+    quadrature = TrapezoidalQuadrature(kc_list, rates)
 
     # solver = AveragedSolver(model_params=mp, rates=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars=ode_pars, source_term=use_source_term)
-    solver = TrapezoidalSolverCPI(kc_list,
-        model_params=mp, rates=rates, TF=TF,  H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
+    solver = TrapezoidalSolverCPI(quadrature,
+        model_params=mp, rates_interface=rates, TF=TF,  H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
         method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()

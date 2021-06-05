@@ -3,7 +3,6 @@ from scipy.integrate import odeint, solve_ivp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from common import *
-from common import trapezoidal_weights
 from load_precomputed import *
 from os import path
 from scipy.linalg import block_diag
@@ -17,11 +16,11 @@ mpl.rcParams['figure.dpi'] = 300
 
 class Solver(ABC):
 
-    def __init__(self, model_params=None, rates=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
+    def __init__(self, model_params=None, rates_interface=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
                  ode_pars = ode_par_defaults, method=None, source_term=True):
         self.TF = TF
         self.mp = model_params
-        self.rates_interface = rates
+        self.rates_interface = rates_interface
 
         self.T0 = get_T0(self.mp)
         print("T0: {}".format(self.T0))
@@ -309,15 +308,12 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
 
 class TrapezoidalSolverCPI(Solver):
 
-    def __init__(self, kc_list, **kwargs):
+    def __init__(self, quadrature, **kwargs):
         Solver.__init__(self, **kwargs)
 
-        self.kc_list = kc_list
-        self.rates = []
-        test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
-
-        for kc in self.kc_list:
-            self.rates.append(self.rates_interface.get_rates(kc))
+        self.kc_list = quadrature.kc_list()
+        self.rates = quadrature.rates()
+        self.weights = quadrature.weights()
 
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
 
@@ -340,12 +336,12 @@ class TrapezoidalSolverCPI(Solver):
 
         return np.real(x0)
 
-    def gamma_omega(self, z, quad):
+    def gamma_omega(self, z):
         T = Tz(z, self.mp.M)
 
         # Integrate rate
         g_int = np.zeros(3, dtype="complex128")
-        for wi, rt, kc in zip(quad.weights, quad.rates, quad.kc_list):
+        for wi, rt, kc in zip(self.weights, self.rates, self.kc_list):
             g_int += wi*(kc**2)*rt.Gamma_nu_a(z)*f_nu(kc)*(1 - f_nu(kc))
 
         g_int *= (T**2)/(np.pi**2)
@@ -360,25 +356,25 @@ class TrapezoidalSolverCPI(Solver):
 
         return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
                                                                                       G_N)
-    def coefficient_matrix(self, z, quad):
+    def coefficient_matrix(self, z):
         T = Tz(z, self.mp.M)
 
         # Top left block, only part that doesn't depend on kc.
-        g_nu = -self.gamma_omega(z, quad)
+        g_nu = -self.gamma_omega(z)
 
         top_row = []
         left_col = []
         diag_H0 = []
         diag_HI = []
 
-        n_kc = len(quad.kc_list)
+        n_kc = len(self.kc_list)
 
         jac = jacobian(z, self.mp, self.smdata)
 
         for i in range(n_kc):
-            kc = quad.kc_list[i]
-            rt = quad.rates[i]
-            w_i = quad.weights[i]
+            kc = self.kc_list[i]
+            rt = self.rates[i]
+            w_i = self.weights[i]
 
             GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, H_I, GB_N, Seq = [R(z) for R in rt]
 
@@ -428,34 +424,16 @@ class TrapezoidalSolverCPI(Solver):
         else:
             return jac * res
 
-    def source_term(self, z, quad):
-        res = [0,0,0]
-        n_kc = len(quad.kc_list)
-        T = Tz(z, self.mp.M)
-        s = self.smdata.s(T)
-        jac = jacobian(z, self.mp, self.smdata)
-
-        for i in range(n_kc):
-            kc = quad.kc_list[i]
-            root = np.sqrt(self.mp.M**2 + (T**2)*(kc**2))
-            exp = np.exp(root/T)
-            S = -T**3*(1.0/s)*(T/MpStar(z, self.mp, self.smdata))*(
-                (root*exp)/((exp + 1)**2))
-            # S = -(1.0/s)*(T/MpStar(z, self.mp, self.smdata))*(
-            #     (root*exp)/((exp + 1)**2))
-            res += [S,S,0,0,0,0,0,0]
-        return jac*np.array(res)
-
-    def calc_hnl_asymmetry(self, sol, zlist, quad):
+    def calc_hnl_asymmetry(self, sol, zlist):
         res = []
 
         for i, z in enumerate(zlist):
             res_i = 0
             T = Tz(z, self.mp.M)
 
-            for j, kc in enumerate(quad.kc_list):
-                kc = quad.kc_list[j]
-                weight = quad.weights[j]
+            for j, kc in enumerate(self.kc_list):
+                kc = self.kc_list[j]
+                weight = self.weights[j]
                 base_col = 3 + 8*j
                 rminus_11 = sol[i, base_col + 4]
                 rminus_22 = sol[i, base_col + 5]
@@ -474,7 +452,6 @@ class TrapezoidalSolverCPI(Solver):
         return np.array(res)
 
     def solve(self, eigvals=False):
-        quad = QuadratureInputs(self.kc_list, trapezoidal_weights(self.kc_list), self.rates)
         initial_state = self.get_initial_state()
 
         # Integration bounds
@@ -486,7 +463,7 @@ class TrapezoidalSolverCPI(Solver):
 
         # Construct system of equations
         def f_state(z, x):
-            sysmat = self.coefficient_matrix(z, quad)
+            sysmat = self.coefficient_matrix(z)
             res = (sysmat.dot(x))
 
             if eigvals:
@@ -495,23 +472,23 @@ class TrapezoidalSolverCPI(Solver):
                 self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
             if self.use_source_term:
-                res -= self.source_term(z, quad)
+                res -= self.source_term(z)
 
             return res
 
         def jac(z, x):
-            return self.coefficient_matrix(z, quad)
+            return self.coefficient_matrix(z)
 
         # Solve them
         if self.method == None or self.method == "LSODE":
             # Default to old odeint / LSODE integrator
             sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, tfirst=True, **self.ode_pars)
             self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
-            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist, quad)
+            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist)
             self._full_solution = sol[0]
         else:
             # Otherwise try solve_ivp
             sol = solve_ivp(f_state, (z0, zF), y0=initial_state, jac=jac, t_eval=zlist, method=self.method, **self.ode_pars)
             self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol.y.T, zlist)
-            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, zlist, quad)
+            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, zlist)
             self._full_solution = sol.y.T

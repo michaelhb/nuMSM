@@ -126,18 +126,3 @@ def tr_h(H_a):
     """
     return np.einsum('ijk,akj->ai', tau, H_a)
 
-def trapezoidal_weights(points):
-    if (len(points)) == 1:
-        return [1.0]
-    else:
-        weights = [0.5 * (points[1] - points[0])]
-
-        for i in range(1, len(points) - 1):
-            weights.append(points[i + 1] - points[i])
-
-        weights.append(0.5 * (points[-1] - points[-2]))
-
-        print(weights)
-
-        return weights
-
