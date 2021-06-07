@@ -6,12 +6,12 @@ environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
 import time
-from quadrature import TrapezoidalQuadrature
+from quadrature import TrapezoidalQuadrature, GaussFermiQuadrature
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
 mp = ModelParams(
-    M=2.0,
+    M=1.0,
     dM=1e-12,
     # dM=0,
     Imw=4.1,
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # kc_list = np.array([0.5, 1.0, 2.0])
     # kc_list = np.array([1.0])
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    kc_list = np.array([0.8, 1.6, 2.4, 3.2, 4. , 4.8, 5.6, 6.4, 7.2, 8.])
+    # kc_list = np.array([0.8, 1.6, 2.4, 3.2, 4. , 4.8, 5.6, 6.4, 7.2, 8.])
     # kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
     #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
@@ -34,14 +34,22 @@ if __name__ == '__main__':
     eig = False
     use_source_term = False
     TF = Tsph
-    # ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
-    ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
+    H = 1
+    ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
+    # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
+    quadrature = GaussFermiQuadrature(5, mp, H, tot=True)
+
+    kc_list = np.array(quadrature.kc_list())
     # rates = Rates_Fortran(mp,1)
-    rates = Rates_Jurai(mp, 1, kc_list, tot=True)
+
+    rates = Rates_Jurai(mp, H, kc_list, tot=True)
     quadrature = TrapezoidalQuadrature(kc_list, rates)
 
-    # solver = AveragedSolver(model_params=mp, rates=rates, TF=TF, H=1, eig_cutoff=False,
+    # rates = None
+
+
+    # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars=ode_pars, source_term=use_source_term)
     solver = TrapezoidalSolverCPI(quadrature,
         model_params=mp, rates_interface=rates, TF=TF,  H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
