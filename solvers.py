@@ -322,6 +322,9 @@ class QuadratureSolver(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
 
+        if self.use_source_term == False:
+            raise Exception("Cannot disable source term for this solver")
+
 
     # Initial condition
     def get_initial_state(self):
@@ -469,9 +472,6 @@ class QuadratureSolver(Solver):
                 eig = speig((sysmat), right=False, left=True)
                 self._eigenvalues.append(eig[0])
                 self._Tlist_eigvals.append(Tz(z, self.mp.M))
-
-            if self.use_source_term:
-                res -= self.source_term(z)
 
             return res
 

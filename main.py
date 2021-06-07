@@ -6,7 +6,7 @@ environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
 import time
-from quadrature import TrapezoidalQuadrature, GaussFermiQuadrature
+from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     cutoff = 1e5
     eig = False
-    use_source_term = False
+    use_source_term = True
     TF = Tsph
     H = 1
     ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
