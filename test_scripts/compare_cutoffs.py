@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     # Cutoff, normal picture
     for cutoff in osc_cutoffs:
-        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H = 1, cutoff=cutoff)
+        solver = QuadratureSolver(mp, T0, Tsph, kc_list, H = 1, cutoff=cutoff)
         start = time.time()
         solver.solve()
         end = time.time()
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         data.append((tag, solver.get_Tlist(), solver.get_total_lepton_asymmetry()))
 
     # No cutoff, interaction picture
-    solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, cutoff=None, interaction=True)
+    solver = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, cutoff=None, interaction=True)
     start = time.time()
     solver.solve()
     end = time.time()

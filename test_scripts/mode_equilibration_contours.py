@@ -42,11 +42,11 @@ if __name__ == '__main__':
     print(T_sample)
 
     if mp.dM < 1e-9:
-        solver = TrapezoidalSolverCPI(mp, T0, TF, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
+        solver = QuadratureSolver(mp, T0, TF, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
     elif mp.dM < 1e-6:
-        solver = TrapezoidalSolverCPI(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
+        solver = QuadratureSolver(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
     else:
-        solver = TrapezoidalSolverCPI(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="Radau", ode_pars={'atol': 1e-10})
+        solver = QuadratureSolver(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="Radau", ode_pars={'atol': 1e-10})
 
     Tlist = solver.get_Tlist()
     print(Tlist)

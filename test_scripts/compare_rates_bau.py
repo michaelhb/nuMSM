@@ -20,13 +20,13 @@ if __name__ == "__main__":
     rates_f = Rates_Fortran(mp,1)
     rates_j = Rates_Jurai(mp, 1, kc_list)
 
-    solver_f = TrapezoidalSolverCPI(kc_list,
-        model_params=mp, rates=rates_f, TF=TF,  H=1, fixed_cutoff=None, eig_cutoff=False,
-        method="Radau", ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=False)
+    solver_f = QuadratureSolver(kc_list,
+                                model_params=mp, rates=rates_f, TF=TF, H=1, fixed_cutoff=None, eig_cutoff=False,
+                                method="Radau", ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=False)
 
-    solver_j = TrapezoidalSolverCPI(kc_list,
-        model_params=mp, rates=rates_j, TF=TF, H=1, fixed_cutoff=None, eig_cutoff=False,
-        method="Radau", ode_pars={'atol': 1e-15, 'rtol': 1e-6}, source_term=False)
+    solver_j = QuadratureSolver(kc_list,
+                                model_params=mp, rates=rates_j, TF=TF, H=1, fixed_cutoff=None, eig_cutoff=False,
+                                method="Radau", ode_pars={'atol': 1e-15, 'rtol': 1e-6}, source_term=False)
 
     print("Solving with Fortran rates")
     solver_f.solve(eigvals=False)

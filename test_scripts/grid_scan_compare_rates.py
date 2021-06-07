@@ -49,9 +49,9 @@ def get_bau(point):
     #     fixed_cutoff = 1e4
     fixed_cutoff = 1e4
 
-    solver = TrapezoidalSolverCPI(kc_list,
-        model_params=mp, rates=rates, TF=Tsph,  H=1, fixed_cutoff=fixed_cutoff, eig_cutoff=False,
-        method="Radau", ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=False)
+    solver = QuadratureSolver(kc_list,
+                              model_params=mp, rates=rates, TF=Tsph, H=1, fixed_cutoff=fixed_cutoff, eig_cutoff=False,
+                              method="Radau", ode_pars={'atol' : 1e-15, 'rtol' : 1e-6}, source_term=False)
 
     start = time.time()
     solver.solve(eigvals=False)

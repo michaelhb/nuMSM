@@ -16,11 +16,10 @@ mpl.rcParams['figure.dpi'] = 300
 
 class Solver(ABC):
 
-    def __init__(self, model_params=None, rates_interface=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
+    def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
                  ode_pars = ode_par_defaults, method=None, source_term=True):
         self.TF = TF
         self.mp = model_params
-        self.rates_interface = rates_interface
 
         self.T0 = get_T0(self.mp)
         print("T0: {}".format(self.T0))
@@ -120,11 +119,11 @@ class Solver(ABC):
 
 class AveragedSolver(Solver):
 
-    def __init__(self, **kwargs):
+    def __init__(self, rates_interface, **kwargs):
         super(AveragedSolver, self).__init__(**kwargs)
 
         # Load rates
-        self.rates = self.rates_interface.get_averaged_rates()
+        self.rates = rates_interface.get_averaged_rates()
 
         # Load standard model data
         test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
@@ -306,7 +305,7 @@ QuadratureInputs = namedtuple("QuadratureInputs", [
     "kc_list", "weights", "rates"
 ])
 
-class TrapezoidalSolverCPI(Solver):
+class QuadratureSolver(Solver):
 
     def __init__(self, quadrature, **kwargs):
         Solver.__init__(self, **kwargs)

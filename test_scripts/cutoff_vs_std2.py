@@ -22,7 +22,7 @@ Result = namedtuple("Result",
 def run_point(point):
     print("Starting point: {}".format(point))
     T0 = get_T0(point.mp)
-    solver = TrapezoidalSolverCPI(point.mp, T0, Tsph, kc_list, H=1, fixed_cutoff=point.cutoff, method="Radau", ode_pars={'atol': 1e-9})
+    solver = QuadratureSolver(point.mp, T0, Tsph, kc_list, H=1, fixed_cutoff=point.cutoff, method="Radau", ode_pars={'atol': 1e-9})
     start = time.time()
     solver.solve()
     end = time.time()

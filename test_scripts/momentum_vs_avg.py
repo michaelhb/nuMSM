@@ -20,11 +20,11 @@ if __name__ == '__main__':
     # TF = 10.
 
     if mp.dM < 1e-9:
-        solver_kdep = TrapezoidalSolverCPI(mp, T0, TF, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
+        solver_kdep = QuadratureSolver(mp, T0, TF, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})
     elif mp.dM < 1e-6:
-        solver_kdep = TrapezoidalSolverCPI(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
+        solver_kdep = QuadratureSolver(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
     else:
-        solver_kdep = TrapezoidalSolverCPI(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="Radau", ode_pars={'atol': 1e-10})
+        solver_kdep = QuadratureSolver(mp, T0, TF, kc_list, H=1, eig_cutoff=True, method="Radau", ode_pars={'atol': 1e-10})
 
     if mp.dM < 1e-9:
         solver_avg = AveragedSolver(mp, T0, TF, 1, eig_cutoff=False, ode_pars={'atol' : 1e-9})

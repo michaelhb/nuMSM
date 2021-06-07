@@ -38,22 +38,20 @@ if __name__ == '__main__':
     ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
-    quadrature = GaussFermiQuadrature(5, mp, H, tot=True)
+    # quadrature = GaussFermiQuadrature(5, mp, H, tot=True)
 
-    kc_list = np.array(quadrature.kc_list())
-    # rates = Rates_Fortran(mp,1)
-
-    rates = Rates_Jurai(mp, H, kc_list, tot=True)
+    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
+    # rates = Rates_Jurai(mp, H, kc_list, tot=True)
+    rates = Rates_Fortran(mp,1)
     quadrature = TrapezoidalQuadrature(kc_list, rates)
 
-    # rates = None
-
+    kc_list = np.array(quadrature.kc_list())
 
     # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars=ode_pars, source_term=use_source_term)
-    solver = TrapezoidalSolverCPI(quadrature,
-        model_params=mp, rates_interface=rates, TF=TF,  H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
-        method="Radau", ode_pars=ode_pars, source_term=use_source_term)
+    solver = QuadratureSolver(quadrature,
+                              model_params=mp, TF=TF, H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
+                              method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()
     solver.solve(eigvals=True)

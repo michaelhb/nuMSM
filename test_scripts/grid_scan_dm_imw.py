@@ -51,10 +51,10 @@ def get_bau(point):
     #     solver = AveragedSolver(mp, T0, Tsph, 1, eig_cutoff=True, ode_pars={'atol': 1e-9})
 
     if (np.abs(Imw) > 4.0):
-        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, ode_pars={'atol': 1e-13}, method="Radau")
+        solver = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, ode_pars={'atol': 1e-13}, method="Radau")
     else:
-        solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=1e4, ode_pars={'atol': 1e-10},
-                                      method="Radau")
+        solver = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=1e4, ode_pars={'atol': 1e-10},
+                                  method="Radau")
 
     # if dM < 1e-9:
     #     solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=False, method="BDF", ode_pars={'atol' : 1e-11})

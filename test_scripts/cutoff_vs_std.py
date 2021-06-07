@@ -37,7 +37,7 @@ if __name__ == '__main__':
         # baus_interaction.append((28./78.)*solver_interaction.get_final_lepton_asymmetry())
         # times_interacton.append(end - start)
 
-        solver_std = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, cutoff=None, method="BDF", ode_pars={'atol' : 1e-11})
+        solver_std = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, cutoff=None, method="BDF", ode_pars={'atol' : 1e-11})
         start = time.time()
         solver_std.solve()
         end = time.time()
@@ -45,9 +45,9 @@ if __name__ == '__main__':
         times_std.append(end - start)
 
         if cutoff == "max_eig":
-            solver_cutoff = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
+            solver_cutoff = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, eig_cutoff=True, method="BDF", ode_pars={'atol' : 1e-11})
         else:
-            solver_cutoff = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=cutoff, method="BDF", ode_pars={'atol' : 1e-11})
+            solver_cutoff = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=cutoff, method="BDF", ode_pars={'atol' : 1e-11})
         start = time.time()
         solver_cutoff.solve()
         end = time.time()

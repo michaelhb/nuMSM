@@ -39,11 +39,11 @@ def get_bau(point):
     if tag == "std":
         if (np.abs(Imw) > 5.0):
             print("Cutoff: None")
-            solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, ode_pars={'atol': 1e-13}, method="Radau")
+            solver = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, ode_pars={'atol': 1e-13}, method="Radau")
         else:
             print("Cutoff: 1e4")
-            solver = TrapezoidalSolverCPI(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=1e4, ode_pars={'atol': 1e-10},
-                                          method="Radau")
+            solver = QuadratureSolver(mp, T0, Tsph, kc_list, H=1, fixed_cutoff=1e4, ode_pars={'atol': 1e-10},
+                                      method="Radau")
     elif tag == "avg":
         if (np.abs(Imw) > 5.0):
             print("Cutoff: None")
