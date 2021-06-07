@@ -304,8 +304,6 @@ class GaussFermiDiracQuadrature(Quadrature):
 
     #NB this will only work with Jurai's rates! So we inherit some params...
     def __init__(self, n_points, mp, H, tot=True):
-        if not (1 <= n_points <= 10):
-            raise Exception("Must have 1 <= n_points <= 10")
 
         _quad = np.array(self._gf_weights[n_points - 1])
         # _quad = np.array(self._gf_weights_20)
