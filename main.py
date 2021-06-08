@@ -6,7 +6,7 @@ environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
 import time
-from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature
+from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, GaussLegendreQuadrature
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
@@ -39,12 +39,11 @@ if __name__ == '__main__':
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
     # quadrature = GaussFermiQuadrature(5, mp, H, tot=True)
-
-    kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    rates = Rates_Jurai(mp, H, kc_list, tot=True)
+    # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)
-    quadrature = TrapezoidalQuadrature(kc_list, rates)
+    # quadrature = TrapezoidalQuadrature(kc_list, rates)
 
+    quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
     kc_list = np.array(quadrature.kc_list())
 
     # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,

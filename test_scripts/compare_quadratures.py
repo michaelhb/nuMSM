@@ -5,7 +5,7 @@ environ["OMP_NUM_THREADS"] = "1"
 environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
-from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature
+from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, GaussLegendreQuadrature
 from rates import Rates_Jurai
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
@@ -27,8 +27,8 @@ mp = ModelParams(
 
 cutoff = None
 
-trap_kc_min = 0.1
-trap_kc_max = 20
+kc_min = 0.1
+kc_max = 20
 
 def get_bau(point):
     mp, quad_tag, n_kc = point
@@ -38,9 +38,11 @@ def get_bau(point):
     if quad_tag == "GaussFermiDirac":
         quad_ = GaussFermiDiracQuadrature(n_kc, mp, H=1, tot=True)
     elif quad_tag == "Trapezoidal":
-        kc_list = np.linspace(trap_kc_min, trap_kc_max, n_kc)
+        kc_list = np.linspace(kc_min, kc_max, n_kc)
         rates = Rates_Jurai(mp, 1, kc_list, tot=True)
         quad_ = TrapezoidalQuadrature(kc_list, rates)
+    elif quad_tag == "GaussLegendre":
+        quad_ = GaussLegendreQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True)
     else:
         raise Exception("Unknown quadrature type")
 
@@ -51,8 +53,9 @@ def get_bau(point):
     )
 
     solver.solve(eigvals=False)
-    print("{} finished n_kc = {}".format(quad_tag, n_kc))
-    return (quad_tag, n_kc, (28./78.) * solver.get_final_lepton_asymmetry())
+    bau = (28./78.) * solver.get_final_lepton_asymmetry()
+    print("{} finished n_kc = {}, bau = {}".format(quad_tag, n_kc, bau))
+    return (quad_tag, n_kc, bau)
 
 if __name__ == "__main__":
     points = []
@@ -63,25 +66,32 @@ if __name__ == "__main__":
     kc_counts = np.array([5 + 5*i for i in range(20)])
 
     # Set up FD quadrature points
-    for n_kc in kc_counts:
-        points.append((mp, "GaussFermiDirac", n_kc))
+    # for n_kc in kc_counts:
+    #     points.append((mp, "GaussFermiDirac", n_kc))
 
     # Trap points will be linspaced in hardcoded global range
     for n_kc in kc_counts:
         points.append((mp, "Trapezoidal", n_kc))
 
+    # Set up Gauss-Legendre points
+    for n_kc in kc_counts:
+        points.append((mp, "GaussLegendre", n_kc))
+
     with Pool() as p:
         res = p.map(get_bau, points)
 
-    res_GFD = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussFermiDirac", res), key=lambda r: r[1])]
+    # res_GFD = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussFermiDirac", res), key=lambda r: r[1])]
     res_trap = [r[2] for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
+    res_GL = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussLegendre", res), key=lambda r: r[1])]
 
     fig, ax = plt.subplots()
 
-    fig.suptitle("Convergence, GFD vs. Trapezoidal")
+    fig.suptitle("Convergence, kc_min = {}, kc_max = {}".format(kc_min, kc_max))
 
-    ax.scatter(kc_counts, res_GFD, color="green", label="GaussFermiDirac", s=5)
+    # ax.scatter(kc_counts, res_GFD, color="green", label="GaussFermiDirac", s=5)
     ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
+    ax.scatter(kc_counts, res_GL, color="red", label="GaussLegendre", s=5)
+
     ax.set_xlabel("n_kc")
     ax.set_ylabel("bau")
     ax.set_yscale("log")

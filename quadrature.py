@@ -327,3 +327,35 @@ class GaussFermiDiracQuadrature(Quadrature):
 
     def rates(self):
         return self._rates
+
+class GaussLegendreQuadrature(Quadrature):
+
+    def __init__(self, n_points, kc_min, kc_max, mp, H, tot=True):
+
+        gq_points, gq_weights = np.polynomial.legendre.leggauss(n_points)
+
+        self._weights = gq_weights
+
+        self._kc_list = np.array(list(map(
+            lambda x: 0.5*(kc_max - kc_min)*x + 0.5*(kc_max + kc_min),
+            gq_points
+        )))
+
+        rates_interface = Rates_Jurai(mp, H, self._kc_list, tot)
+
+        self._rates = []
+        for kc in self._kc_list:
+            self._rates.append(rates_interface.get_rates(kc))
+
+        print(gq_points)
+        print(self._kc_list)
+        print(self._weights)
+
+    def kc_list(self):
+        return self._kc_list
+
+    def weights(self):
+        return self._weights
+
+    def rates(self):
+        return self._rates
