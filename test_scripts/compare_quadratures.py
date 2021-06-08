@@ -28,7 +28,7 @@ mp = ModelParams(
 cutoff = None
 
 kc_min = 0.1
-kc_max = 20
+kc_max = 10
 
 def get_bau(point):
     mp, quad_tag, n_kc = point
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # ax.scatter(kc_counts, res_GFD, color="green", label="GaussFermiDirac", s=5)
     ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
-    ax.scatter(kc_counts, res_GL, color="red", label="GaussLegendre", s=5)
+    ax.scatter(kc_counts, res_GL, color="blue", label="GaussLegendre", s=5)
 
     ax.set_xlabel("n_kc")
     ax.set_ylabel("bau")
