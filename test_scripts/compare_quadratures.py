@@ -81,8 +81,8 @@ if __name__ == "__main__":
         res = p.map(get_bau, points)
 
     # res_GFD = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussFermiDirac", res), key=lambda r: r[1])]
-    res_trap = [r[2] for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
-    res_GL = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussLegendre", res), key=lambda r: r[1])]
+    res_trap = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
+    res_GL = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLegendre", res), key=lambda r: r[1])]
 
     fig, ax = plt.subplots()
 
