@@ -49,8 +49,9 @@ def get_bau(point):
         model_params=mp, TF=Tsph, H=1, eig_cutoff=None, fixed_cutoff = cutoff,
         ode_pars={'atol': 1e-15, 'rtol': 1e-6}, method="Radau"
     )
-    print("{} finished n_kc = {}".format(quad_tag, n_kc))
+
     solver.solve(eigvals=False)
+    print("{} finished n_kc = {}".format(quad_tag, n_kc))
     return (quad_tag, n_kc, (28./78.) * solver.get_final_lepton_asymmetry())
 
 if __name__ == "__main__":
