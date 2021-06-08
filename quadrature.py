@@ -301,14 +301,12 @@ class GaussFermiDiracQuadrature(Quadrature):
             [62.852047171992722840290110939137, 0.0000000000000000000000000063899225477407555817789497619697]
         ]
     ]
-
     #NB this will only work with Jurai's rates! So we inherit some params...
     def __init__(self, n_points, mp, H, tot=True):
 
         _quad = np.array(self._gf_weights[n_points - 1])
-        # _quad = np.array(self._gf_weights_20)
+
         self._kc_list = _quad[:, 0]
-        # self._weights = _quad[:, 1]
         self._weights = _quad[:, 1] / f_nu(self._kc_list)
         self._rates = []
 

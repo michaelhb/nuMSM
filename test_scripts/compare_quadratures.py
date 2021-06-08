@@ -27,6 +27,9 @@ mp = ModelParams(
 
 cutoff = None
 
+trap_kc_min = 0.1
+trap_kc_max = 20
+
 def get_bau(point):
     mp, quad_tag, n_kc = point
 
@@ -35,7 +38,7 @@ def get_bau(point):
     if quad_tag == "GaussFermiDirac":
         quad_ = GaussFermiDiracQuadrature(n_kc, mp, H=1, tot=True)
     elif quad_tag == "Trapezoidal":
-        kc_list = np.linspace(0.3, 10, n_kc)
+        kc_list = np.linspace(trap_kc_min, trap_kc_max, n_kc)
         rates = Rates_Jurai(mp, 1, kc_list, tot=True)
         quad_ = TrapezoidalQuadrature(kc_list, rates)
     else:
@@ -53,14 +56,16 @@ def get_bau(point):
 if __name__ == "__main__":
     points = []
 
+    # kc_counts = list(range(5, 41))
     # kc_counts = list(range(5, 21))
-    kc_counts = list(range(5, 8))
+    # kc_counts = list(range(5, 8))
+    kc_counts = np.array([5 + 5*i for i in range(20)])
 
     # Set up FD quadrature points
     for n_kc in kc_counts:
         points.append((mp, "GaussFermiDirac", n_kc))
 
-    # Trap points will be linspaced in the range [0.3,10]
+    # Trap points will be linspaced in hardcoded global range
     for n_kc in kc_counts:
         points.append((mp, "Trapezoidal", n_kc))
 

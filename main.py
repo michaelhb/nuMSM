@@ -41,8 +41,8 @@ if __name__ == '__main__':
     # quadrature = GaussFermiQuadrature(5, mp, H, tot=True)
 
     kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    # rates = Rates_Jurai(mp, H, kc_list, tot=True)
-    rates = Rates_Fortran(mp,1)
+    rates = Rates_Jurai(mp, H, kc_list, tot=True)
+    # rates = Rates_Fortran(mp,1)
     quadrature = TrapezoidalQuadrature(kc_list, rates)
 
     kc_list = np.array(quadrature.kc_list())
