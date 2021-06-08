@@ -310,10 +310,6 @@ class GaussFermiDiracQuadrature(Quadrature):
         self._weights = _quad[:, 1] / f_nu(self._kc_list)
         self._rates = []
 
-        # DEBUG
-        print("kc_list: {}".format(self._kc_list))
-        print("weights: {}".format(self._weights))
-
         rates_interface = Rates_Jurai(mp, H, self._kc_list, tot)
 
         for kc in self._kc_list:
@@ -346,10 +342,6 @@ class GaussLegendreQuadrature(Quadrature):
         self._rates = []
         for kc in self._kc_list:
             self._rates.append(rates_interface.get_rates(kc))
-
-        print(gq_points)
-        print(self._kc_list)
-        print(self._weights)
 
     def kc_list(self):
         return self._kc_list
