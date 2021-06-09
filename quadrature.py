@@ -32,8 +32,6 @@ class TrapezoidalQuadrature(Quadrature):
 
             self._weights.append(0.5 * (kc_list[-1] - kc_list[-2]))
 
-        print(self._weights)
-
         self._rates = []
 
         for kc in self._kc_list:
