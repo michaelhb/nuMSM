@@ -32,6 +32,8 @@ class TrapezoidalQuadrature(Quadrature):
 
             self._weights.append(0.5 * (kc_list[-1] - kc_list[-2]))
 
+        print(self._weights)
+
         self._rates = []
 
         for kc in self._kc_list:
@@ -330,7 +332,8 @@ class GaussLegendreQuadrature(Quadrature):
 
         gq_points, gq_weights = np.polynomial.legendre.leggauss(n_points)
 
-        self._weights = gq_weights
+        # self._weights = gq_weights
+        self._weights = 0.5*(kc_max - kc_min)*gq_weights
 
         self._kc_list = np.array(list(map(
             lambda x: 0.5*(kc_max - kc_min)*x + 0.5*(kc_max + kc_min),
