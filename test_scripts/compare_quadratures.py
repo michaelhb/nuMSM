@@ -5,12 +5,13 @@ environ["OMP_NUM_THREADS"] = "1"
 environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
-from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, GaussLegendreQuadrature
+from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, GaussianQuadrature
 from rates import Rates_Jurai
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
 from collections import namedtuple
 
+# PARAMETER SET 1
 mp = ModelParams(
     M=1.0,
     dM=1e-12,
@@ -20,10 +21,6 @@ mp = ModelParams(
     delta= np.pi,
     eta=3/2 * np.pi
 )
-
-# Can't pickle these, but follow this format :/
-# point = namedtuple("Point", ["mp", "quad_tag", "n_kc"])
-# result = namedtuple("Result", ["point", "bau"])
 
 cutoff = None
 
@@ -42,7 +39,9 @@ def get_bau(point):
         rates = Rates_Jurai(mp, 1, kc_list, tot=True)
         quad_ = TrapezoidalQuadrature(kc_list, rates)
     elif quad_tag == "GaussLegendre":
-        quad_ = GaussLegendreQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True)
+        quad_ = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True, qscheme="legendre")
+    elif quad_tag == "GaussRadau":
+        quad_ = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True, qscheme="radau")
     else:
         raise Exception("Unknown quadrature type")
 
@@ -77,20 +76,26 @@ if __name__ == "__main__":
     for n_kc in kc_counts:
         points.append((mp, "GaussLegendre", n_kc))
 
+    # Set up Gauss-Radau points
+    for n_kc in kc_counts:
+        points.append((mp, "GaussRadau", n_kc))
+
     with Pool() as p:
         res = p.map(get_bau, points)
 
     # res_GFD = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussFermiDirac", res), key=lambda r: r[1])]
-    res_trap = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
+    # res_trap = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
     res_GL = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLegendre", res), key=lambda r: r[1])]
+    res_GR = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussRadau", res), key=lambda r: r[1])]
 
     fig, ax = plt.subplots()
 
     fig.suptitle("Convergence, kc_min = {}, kc_max = {}".format(kc_min, kc_max))
 
     # ax.scatter(kc_counts, res_GFD, color="green", label="GaussFermiDirac", s=5)
-    ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
+    # ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
     ax.scatter(kc_counts, res_GL, color="blue", label="GaussLegendre", s=5)
+    ax.scatter(kc_counts, res_GR, color="orange", label="GaussRadau", s=5)
 
     ax.set_xlabel("n_kc")
     ax.set_ylabel("bau")

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from rates import Rates_Jurai
 from common import f_nu
+import quadpy as qp
 
 class Quadrature(ABC):
 
@@ -324,11 +325,16 @@ class GaussFermiDiracQuadrature(Quadrature):
     def rates(self):
         return self._rates
 
-class GaussLegendreQuadrature(Quadrature):
+class GaussianQuadrature(Quadrature):
 
-    def __init__(self, n_points, kc_min, kc_max, mp, H, tot=True):
+    def __init__(self, n_points, kc_min, kc_max, mp, H, tot=True, qscheme="legendre"):
 
-        gq_points, gq_weights = np.polynomial.legendre.leggauss(n_points)
+        if qscheme == "legendre":
+            gq = qp.c1.gauss_legendre(n_points)
+        elif qscheme == "radau":
+            gq = qp.c1.gauss_radau(n_points)
+        gq_points = gq.points
+        gq_weights = gq.weights
 
         # self._weights = gq_weights
         self._weights = 0.5*(kc_max - kc_min)*gq_weights

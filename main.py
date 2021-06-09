@@ -6,7 +6,7 @@ environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
 import time
-from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, GaussLegendreQuadrature
+from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, GaussianQuadrature
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
@@ -14,7 +14,7 @@ mp = ModelParams(
     M=1.0,
     dM=1e-12,
     # dM=0,
-    Imw=4.1,
+    Imw=0.5,
     Rew=1/4 * np.pi,
     delta= np.pi,
     eta=3/2 * np.pi
@@ -30,7 +30,9 @@ if __name__ == '__main__':
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
     #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
-    cutoff = 1e5
+    # kc_list = np.linspace(0.1, 10.0, 10)
+
+    cutoff = None
     eig = False
     use_source_term = True
     TF = Tsph
@@ -38,12 +40,12 @@ if __name__ == '__main__':
     ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
-    # quadrature = GaussFermiQuadrature(5, mp, H, tot=True)
+    quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
     # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
 
-    quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
+    # quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
     kc_list = np.array(quadrature.kc_list())
 
     # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
