@@ -42,6 +42,8 @@ def get_bau(point):
         quad_ = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True, qscheme="legendre")
     elif quad_tag == "GaussRadau":
         quad_ = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True, qscheme="radau")
+    elif quad_tag == "GaussLobatto":
+        quad_ = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H=1, tot=True, qscheme="lobatto")
     else:
         raise Exception("Unknown quadrature type")
 
@@ -69,8 +71,8 @@ if __name__ == "__main__":
     #     points.append((mp, "GaussFermiDirac", n_kc))
 
     # Trap points will be linspaced in hardcoded global range
-    for n_kc in kc_counts:
-        points.append((mp, "Trapezoidal", n_kc))
+    # for n_kc in kc_counts:
+    #     points.append((mp, "Trapezoidal", n_kc))
 
     # Set up Gauss-Legendre points
     for n_kc in kc_counts:
@@ -80,6 +82,10 @@ if __name__ == "__main__":
     for n_kc in kc_counts:
         points.append((mp, "GaussRadau", n_kc))
 
+    # Set up Gauss-Lobatto points
+    for n_kc in kc_counts:
+        points.append((mp, "GaussLobatto", n_kc))
+
     with Pool() as p:
         res = p.map(get_bau, points)
 
@@ -87,6 +93,7 @@ if __name__ == "__main__":
     # res_trap = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
     res_GL = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLegendre", res), key=lambda r: r[1])]
     res_GR = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussRadau", res), key=lambda r: r[1])]
+    res_GLob = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLobatto", res), key=lambda r: r[1])]
 
     fig, ax = plt.subplots()
 
@@ -96,6 +103,7 @@ if __name__ == "__main__":
     # ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
     ax.scatter(kc_counts, res_GL, color="blue", label="GaussLegendre", s=5)
     ax.scatter(kc_counts, res_GR, color="orange", label="GaussRadau", s=5)
+    ax.scatter(kc_counts, res_GLob, color="purple", label="GaussLobatto", s=5)
 
     ax.set_xlabel("n_kc")
     ax.set_ylabel("bau")

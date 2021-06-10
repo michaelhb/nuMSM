@@ -333,6 +333,8 @@ class GaussianQuadrature(Quadrature):
             gq = qp.c1.gauss_legendre(n_points)
         elif qscheme == "radau":
             gq = qp.c1.gauss_radau(n_points)
+        elif qscheme == "lobatto":
+            gq = qp.c1.gauss_lobatto(n_points)
         gq_points = gq.points
         gq_weights = gq.weights
 
