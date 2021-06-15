@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
+    quadrature = GaussianQuadrature(10, 0, 10, mp, H, tot=True, qscheme="legendre")
     # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
     #                         ode_pars=ode_pars, source_term=use_source_term)
     solver = QuadratureSolver(quadrature,
-                              model_params=mp, TF=TF, H=2, fixed_cutoff=cutoff, eig_cutoff=eig,
+                              model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
                               method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()

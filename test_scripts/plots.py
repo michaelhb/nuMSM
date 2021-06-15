@@ -23,37 +23,6 @@ def lepton_asymmetry_comp(data, title, outfile):
     plt.tight_layout()
     plt.savefig(outfile)
 
-# def contour_dm_imw_comp(data1, data2, axsize, title, outfile):
-#     plt.clf()
-#
-#     # Data should be np array [[dm, imw, bau],...]
-#     # bau = np.abs(data[:,0])
-#     bau1 = data1[:, 0]
-#     dm1 = data1[:,1]
-#     imw1 = data1[:,2]
-#
-#     bau1 = np.reshape(np.array(bau1), (axsize, axsize))
-#     dm1 = list(dict.fromkeys(dm1))
-#     imw1 = list(dict.fromkeys(imw1))
-#
-#     bau2 = data2[:, 0]
-#     dm2 = data2[:,1]
-#     imw2 = data2[:,2]
-#
-#     bau2 = np.reshape(np.array(bau2), (axsize, axsize))
-#     dm2 = list(dict.fromkeys(dm2))
-#     imw2 = list(dict.fromkeys(imw2))
-#
-#     # plt.contourf(imw, dm, bau, levels=[-1e-10, 1e-10], colors="lightblue")
-#     plt.contour(imw1, dm1, bau1, levels=[-1e-10, 1e-10], colors='midnightblue', linestyles="-")
-#     plt.contour(imw2, dm2, bau2, levels=[-1e-10, 1e-10], colors='red', linestyles="-", alpha=0.5)
-#     plt.ylabel(r'$\Delta M/M$')
-#     plt.yscale('log')
-#     plt.xlabel(r'$Im \omega$')
-#     plt.title(title)
-#     plt.tight_layout()
-#     plt.savefig(outfile)
-
 def bau_rdiff_heatmap(data1, data2, axsize, title, outfile):
     plt.clf()
 
