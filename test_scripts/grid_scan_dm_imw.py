@@ -11,9 +11,14 @@ from multiprocessing import Pool, set_start_method
 from plots import heatmap_dm_imw, contour_dm_imw, heatmap_dm_imw_timing, contour_dm_imw_comp
 from quadrature import GaussianQuadrature
 from scandb import ScanDB
-import warnings
 
-warnings.filterwarnings("ignore")
+import warnings
+warnings.filterwarnings(
+    action='ignore',
+    # category=DeprecationWarning,
+    module=r'.*leptotools.*'
+)
+
 
 # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
 #                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
