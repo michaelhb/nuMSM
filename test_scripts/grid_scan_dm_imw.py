@@ -24,6 +24,7 @@ warnings.filterwarnings(
 #                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 kc_min = 0.0
 kc_max = 10.0
+n_kc = 20
 cutoff = 1e4
 
 def get_scan_points(points_per_dim, M, delta, eta, Rew):
@@ -52,7 +53,7 @@ def get_bau(point):
     if tag == "avg":
         raise Exception("Not impelemented yet")
     else:
-        quadrature = GaussianQuadrature(10, kc_min, kc_max, mp, H, tot=True, qscheme="legendre")
+        quadrature = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H, tot=True, qscheme="legendre")
         solver = QuadratureSolver(quadrature,
                                   model_params=mp, TF=Tsph, H=H, fixed_cutoff=cutoff, eig_cutoff=False,
                                   method="Radau", ode_pars={'atol': 1e-15, 'rtol': 1e-6}, source_term=True)
@@ -74,8 +75,8 @@ if __name__ == '__main__':
     db_name = argv[2]
     axsize = int(argv[3])
 
-    yaml_file = path.abspath(path.join(path.dirname(__file__), yaml_file))
-    with open(yaml_file) as file:
+    yaml_path = path.abspath(path.join(path.dirname(__file__), yaml_file))
+    with open(yaml_path) as file:
         doc = yaml.load(file, Loader=yaml.FullLoader)
         M = doc["M"]
         delta = doc["delta"]
