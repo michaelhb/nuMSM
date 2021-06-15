@@ -22,6 +22,17 @@ mp = ModelParams(
     eta=3/2 * np.pi
 )
 
+# PARAMETER SET 2
+# mp = ModelParams(
+#     M=2.0,
+#     dM=1e-12,
+#     # dM=0,
+#     Imw=1.1,
+#     Rew=3/4 * np.pi,
+#     delta= np.pi,
+#     eta=1/2 * np.pi
+# )
+
 cutoff = None
 
 kc_min = 0.1
@@ -71,39 +82,39 @@ if __name__ == "__main__":
     #     points.append((mp, "GaussFermiDirac", n_kc))
 
     # Trap points will be linspaced in hardcoded global range
-    # for n_kc in kc_counts:
-    #     points.append((mp, "Trapezoidal", n_kc))
+    for n_kc in kc_counts:
+        points.append((mp, "Trapezoidal", n_kc))
 
     # Set up Gauss-Legendre points
     for n_kc in kc_counts:
         points.append((mp, "GaussLegendre", n_kc))
 
-    # Set up Gauss-Radau points
-    for n_kc in kc_counts:
-        points.append((mp, "GaussRadau", n_kc))
-
-    # Set up Gauss-Lobatto points
-    for n_kc in kc_counts:
-        points.append((mp, "GaussLobatto", n_kc))
-
-    with Pool() as p:
-        res = p.map(get_bau, points)
+    # # Set up Gauss-Radau points
+    # for n_kc in kc_counts:
+    #     points.append((mp, "GaussRadau", n_kc))
+    #
+    # # Set up Gauss-Lobatto points
+    # for n_kc in kc_counts:
+    #     points.append((mp, "GaussLobatto", n_kc))
+    #
+    # with Pool() as p:
+    #     res = p.map(get_bau, points)
 
     # res_GFD = [r[2] for r in sorted(filter(lambda r: r[0] == "GaussFermiDirac", res), key=lambda r: r[1])]
-    # res_trap = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
+    res_trap = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "Trapezoidal", res), key=lambda r: r[1])]
     res_GL = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLegendre", res), key=lambda r: r[1])]
-    res_GR = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussRadau", res), key=lambda r: r[1])]
-    res_GLob = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLobatto", res), key=lambda r: r[1])]
+    # res_GR = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussRadau", res), key=lambda r: r[1])]
+    # res_GLob = [np.abs(r[2]) for r in sorted(filter(lambda r: r[0] == "GaussLobatto", res), key=lambda r: r[1])]
 
     fig, ax = plt.subplots()
 
     fig.suptitle("Convergence, kc_min = {}, kc_max = {}".format(kc_min, kc_max))
 
     # ax.scatter(kc_counts, res_GFD, color="green", label="GaussFermiDirac", s=5)
-    # ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
+    ax.scatter(kc_counts, res_trap, color="red", label="Trapezoidal", s=5)
     ax.scatter(kc_counts, res_GL, color="blue", label="GaussLegendre", s=5)
-    ax.scatter(kc_counts, res_GR, color="orange", label="GaussRadau", s=5)
-    ax.scatter(kc_counts, res_GLob, color="purple", label="GaussLobatto", s=5)
+    # ax.scatter(kc_counts, res_GR, color="orange", label="GaussRadau", s=5)
+    # ax.scatter(kc_counts, res_GLob, color="purple", label="GaussLobatto", s=5)
 
     ax.set_xlabel("n_kc")
     ax.set_ylabel("bau")

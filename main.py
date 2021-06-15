@@ -11,13 +11,13 @@ import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
 mp = ModelParams(
-    M=1.0,
+    M=2.0,
     dM=1e-12,
     # dM=0,
-    Imw=0.5,
-    Rew=1/4 * np.pi,
+    Imw=1.1,
+    Rew=3/4 * np.pi,
     delta= np.pi,
-    eta=3/2 * np.pi
+    eta=1/2 * np.pi
 )
 
 if __name__ == '__main__':
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
+    # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
     quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
     # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)

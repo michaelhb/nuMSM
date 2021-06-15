@@ -4,22 +4,6 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from leptotools.momentumDep import interpHFast, interpFast
 
-# def make_plot(title,
-#               rate1, label1,
-#               rate2, label2,
-#               rate3, label3,
-#               Tlist, yscale="linear"):
-#     Y1 = np.abs(np.array(list(map(rate1, Tlist))))
-#     Y2 = np.abs(np.array(list(map(rate2, Tlist))))
-#     plt.plot(Tlist, Y1, label=label1)
-#     plt.plot(Tlist, Y2, label=label2)
-#     plt.xlabel("T")
-#     plt.ylabel("rate")
-#     plt.yscale(yscale)
-#     plt.title(title)
-#     plt.legend()
-#     plt.show()
-
 def make_plot(title, data, Tlist, yscale="linear"):
     # Data: list of tuples (rate_func, label)
     for datum in data:
