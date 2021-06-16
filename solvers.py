@@ -78,6 +78,39 @@ class Solver(ABC):
         plt.title(title)
         plt.show()
 
+    def plot_everything(self):
+        plt.clf()
+        X = self.get_Tlist()
+        Y = self.get_full_solution()
+
+        Y_delta_n = [Y[:, 0], Y[:, 1], Y[:, 2]]
+        Y_kc_real_p = []
+        Y_kc_real_m = []
+        Y_kc_imag_p = []
+        Y_kc_imag_m = []
+
+        for j, kc in enumerate(self.kc_list):
+            base_col = 3 + 8 * j
+            Y_kc_real_p.append(Y[:, base_col])
+            Y_kc_real_p.append(Y[:, base_col + 1])
+            Y_kc_imag_p.append(Y[:, base_col + 2])
+            Y_kc_imag_p.append(Y[:, base_col + 3])
+            Y_kc_real_m.append(Y[:, base_col + 4])
+            Y_kc_real_m.append(Y[:, base_col + 5])
+            Y_kc_imag_m.append(Y[:, base_col + 6])
+            Y_kc_imag_m.append(Y[:, base_col + 7])
+
+        plt.loglog(X, np.abs(Y_kc_real_p).T, color="blue", label="kc_real")
+        plt.loglog(X, np.abs(Y_kc_real_m).T, color="blue", label="kc_real", linestyle="-.")
+        plt.loglog(X, np.abs(Y_kc_imag_p).T, color="red", label="kc_imag")
+        plt.loglog(X, np.abs(Y_kc_imag_m).T, color="red", label="kc_imag", linestyle="-.")
+        plt.loglog(X, np.abs(Y_delta_n).T, color="green", label="delta_n")
+
+        plt.xlabel("T")
+        plt.ylabel("everything")
+        plt.title("everything!")
+        plt.show()
+
     def plot_eigenvalues(self, title=None, use_z=False):
         plt.clf()
         X = self._Tlist_eigvals
@@ -116,6 +149,7 @@ class Solver(ABC):
 
     def get_Tlist(self):
         return Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
+
 
 class AveragedSolver(Solver):
 

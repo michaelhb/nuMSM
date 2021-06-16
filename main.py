@@ -11,13 +11,14 @@ import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
 mp = ModelParams(
-    M=2.0,
-    dM=1e-12,
+    M=10.0,
+    dM=0.0303919538231321,
     # dM=0,
-    Imw=1.1,
-    Rew=3/4 * np.pi,
-    delta= np.pi,
-    eta=1/2 * np.pi
+    Imw=0.206896551724138,
+    # Imw=4.0,
+    Rew=0.7853981633974483,
+    delta=3.141592653589793,
+    eta=4.71238898038469
 )
 
 if __name__ == '__main__':
@@ -32,16 +33,16 @@ if __name__ == '__main__':
 
     # kc_list = np.linspace(0.1, 10.0, 10)
 
-    cutoff = None
+    cutoff = 1e4
     eig = False
     use_source_term = True
     TF = Tsph
     H = 1
-    ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
+    ode_pars = {'atol': 1e-20, 'rtol': 1e-3}
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    quadrature = GaussianQuadrature(10, 0, 10, mp, H, tot=True, qscheme="legendre")
+    quadrature = GaussianQuadrature(20, 0, 10, mp, H, tot=True, qscheme="legendre")
     # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
@@ -63,6 +64,7 @@ if __name__ == '__main__':
         mp.M, mp.dM, mp.Imw, kc_list.shape[0], str(cutoff), bau
     )
     print("Time (solve): {}".format(end - start))
+    solver.plot_everything()
     solver.plot_eigenvalues(title)
     # solver.plot_eigenvalues(title, use_z=True)
     solver.plot_total_lepton_asymmetry(title)
