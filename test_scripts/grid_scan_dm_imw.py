@@ -56,7 +56,7 @@ def get_bau(point):
         quadrature = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H, tot=True, qscheme="legendre")
         solver = QuadratureSolver(quadrature,
                                   model_params=mp, TF=Tsph, H=H, fixed_cutoff=cutoff, eig_cutoff=False,
-                                  method="Radau", ode_pars={'atol': 1e-20, 'rtol': 1e-3}, source_term=True)
+                                  method="Radau", ode_pars={'atol': 1e-20, 'rtol': 1e-4}, source_term=True)
 
     start = time.time()
     solver.solve(eigvals=False)
