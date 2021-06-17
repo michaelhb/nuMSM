@@ -10,16 +10,7 @@ from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, Gaussia
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
-mp = ModelParams(
-    M=10.0,
-    dM=0.0303919538231321,
-    # dM=0,
-    Imw=0.206896551724138,
-    # Imw=4.0,
-    Rew=0.7853981633974483,
-    delta=3.141592653589793,
-    eta=4.71238898038469
-)
+mp = ModelParams(M=0.1, dM=0.01, Imw=3.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
 
 if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
@@ -38,11 +29,11 @@ if __name__ == '__main__':
     use_source_term = True
     TF = Tsph
     H = 1
-    ode_pars = {'atol': 1e-20, 'rtol': 1e-3}
+    ode_pars = {'atol': 1e-20, 'rtol': 1e-4}
     # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    quadrature = GaussianQuadrature(20, 0, 10, mp, H, tot=True, qscheme="legendre")
+    quadrature = GaussianQuadrature(5, 0, 10, mp, H, tot=True, qscheme="legendre")
     # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)

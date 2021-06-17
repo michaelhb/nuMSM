@@ -27,9 +27,7 @@ kc_max = 10.0
 n_kc = 20
 cutoff = 1e4
 
-def get_scan_points(points_per_dim, M, delta, eta, Rew):
-    dM_min = -16
-    dM_max = -1
+def get_scan_points(points_per_dim, M, delta, eta, Rew, dM_min, dM_max):
     dMs = [10**e for e in np.linspace(dM_min, dM_max, points_per_dim)]
 
     Imw_min = -6.
@@ -85,12 +83,14 @@ if __name__ == '__main__':
         avg = doc["avg"]
         H = int(doc["H"])
         tag = doc["tag"]
+        dM_min = doc["dm_min"]
+        dM_max = doc["dm_max"]
 
     output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
     db_path = path.join(output_dir, db_name)
     db = ScanDB(db_path)
 
-    points = get_scan_points(axsize, M, delta, eta, Rew)
+    points = get_scan_points(axsize, M, delta, eta, Rew, dM_min, dM_max)
     res_cache = []
     points_scan = []
 
