@@ -53,7 +53,7 @@ def get_bau(point):
     if "avg" in tag:
         kc_list = np.array([1.0]) # Dummy param, remove after refactor
         rates = Rates_Jurai(mp, H, kc_list, tot=True)
-        solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=Tsph, H=H, eig_cutoff=False,
+        solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=Tsph, H=H, fixed_cutoff=cutoff, eig_cutoff=False,
                                 ode_pars=ode_pars, source_term=False)
     else:
         quadrature = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H, tot=True, qscheme="legendre")

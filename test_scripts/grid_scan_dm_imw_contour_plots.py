@@ -23,45 +23,84 @@ def get_scan_points(points_per_dim, M, delta, eta, Rew, dM_min, dM_max):
     return np.array(points)
 
 if __name__ == "__main__":
-    #Args: yaml file, db file, axsize, outfile
-    yaml_file = argv[1]
-    db_name = argv[2]
-    axsize = int(argv[3])
+    # #Args: yaml file, db file, axsize, outfile
+    # yaml_file = argv[1]
+    # db_name = argv[2]
+    # axsize = int(argv[3])
 
-    yaml_path = path.abspath(path.join(path.dirname(__file__), yaml_file))
-    with open(yaml_path) as file:
-        doc = yaml.load(file, Loader=yaml.FullLoader)
-        M = doc["M"]
-        delta = doc["delta"]
-        eta = doc["eta"]
-        Rew = doc["rew"]
-        avg = doc["avg"]
-        H = int(doc["H"])
-        tag = doc["tag"]
-        dM_min = doc["dm_min"]
-        dM_max = doc["dm_max"]
-
-    # def get_scan_points(points_per_dim, M, delta, eta, Rew):
-    points = get_scan_points(axsize, M, delta, eta, Rew, dM_min, dM_max)
+    # Args: db file, axsize, outfile, [yaml files...]
+    db_name = argv[1]
+    axsize = argv[2]
+    outfile = argv[3]
+    yaml_files = argv[4:]
 
     output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
     db_path = path.join(output_dir, db_name)
     db = ScanDB(db_path)
 
-    res_plot = []
-    res_time = []
+    res_plots = []
 
-    for point in points:
-        dm, Imw, mp = point
-        bau, time_sol = db.get_bau(mp, tag)
-        if bau is None:
-            raise Exception("Missing point! {}".format(mp))
-        res_plot.append([bau, dm, Imw, time_sol])
+    for yaml_file in yaml_files:
+        yaml_path = path.abspath(path.join(path.dirname(__file__), yaml_file))
+        with open(yaml_path) as file:
+            doc = yaml.load(file, Loader=yaml.FullLoader)
+            M = doc["M"]
+            delta = doc["delta"]
+            eta = doc["eta"]
+            Rew = doc["rew"]
+            avg = doc["avg"]
+            H = int(doc["H"])
+            tag = doc["tag"]
+            dM_min = doc["dm_min"]
+            dM_max = doc["dm_max"]
 
-    outfile_bau_plot = path.join(output_dir, "grid_scan_dm_imw_{}.png".format(tag))
-    outfile_timing_plot = path.join(output_dir, "grid_scan_dm_imw_timing.png".format(tag))
-    title = "M = {}".format(M)
+        res_plot = []
+        points = get_scan_points(axsize, M, delta, eta, Rew, dM_min, dM_max)
 
-    contour_dm_imw_comp([(tag, np.array(res_plot))], axsize, title, outfile_bau_plot)
-    heatmap_dm_imw_timing(np.array(res_plot), axsize, title, outfile_timing_plot)
+        for point in points:
+            dm, Imw, mp = point
+            bau, time_sol = db.get_bau(mp, tag)
+            if bau is None:
+                raise Exception("Missing point! {}".format(mp))
+            res_plot.append([bau, dm, Imw, time_sol])
+
+        res_plots.append((tag, res_plot))
+
+
+    # yaml_path = path.abspath(path.join(path.dirname(__file__), yaml_file))
+    # with open(yaml_path) as file:
+    #     doc = yaml.load(file, Loader=yaml.FullLoader)
+    #     M = doc["M"]
+    #     delta = doc["delta"]
+    #     eta = doc["eta"]
+    #     Rew = doc["rew"]
+    #     avg = doc["avg"]
+    #     H = int(doc["H"])
+    #     tag = doc["tag"]
+    #     dM_min = doc["dm_min"]
+    #     dM_max = doc["dm_max"]
+    #
+    # # def get_scan_points(points_per_dim, M, delta, eta, Rew):
+    # points = get_scan_points(axsize, M, delta, eta, Rew, dM_min, dM_max)
+    #
+    # output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
+    # db_path = path.join(output_dir, db_name)
+    # db = ScanDB(db_path)
+    #
+    # res_plot = []
+    # res_time = []
+    #
+    # for point in points:
+    #     dm, Imw, mp = point
+    #     bau, time_sol = db.get_bau(mp, tag)
+    #     if bau is None:
+    #         raise Exception("Missing point! {}".format(mp))
+    #     res_plot.append([bau, dm, Imw, time_sol])
+    #
+    # outfile_bau_plot = path.join(output_dir, "grid_scan_dm_imw_{}.png".format(tag))
+    # outfile_timing_plot = path.join(output_dir, "grid_scan_dm_imw_timing.png".format(tag))
+    # title = "M = {}".format(M)
+    #
+    # contour_dm_imw_comp([(tag, np.array(res_plot))], axsize, title, outfile_bau_plot)
+    # heatmap_dm_imw_timing(np.array(res_plot), axsize, title, outfile_timing_plot)
 
