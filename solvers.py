@@ -333,7 +333,7 @@ class AveragedSolver(Solver):
                 [np.zeros((3,3)), np.zeros((3,8))],
                 [np.zeros((8,3)), H0_inner]
             ]))
-            return np.dot(jac*res, np.linalg.inv(-jac*Aprime/cutoff + np.eye(11)))
+            return np.real(np.dot(jac*res, np.linalg.inv(-jac*Aprime/cutoff + np.eye(11))))
         else:
             return jac*np.real(res)
 
