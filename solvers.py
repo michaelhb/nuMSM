@@ -331,14 +331,6 @@ class AveragedSolver(Solver):
         else:
             return jac*np.real(res)
 
-"""
-Data type to describe a quadrature scheme, incl. the list of 
-momenta points, weights and rates.
-"""
-QuadratureInputs = namedtuple("QuadratureInputs", [
-    "kc_list", "weights", "rates"
-])
-
 class QuadratureSolver(Solver):
 
     def __init__(self, quadrature, **kwargs):
@@ -465,7 +457,6 @@ class QuadratureSolver(Solver):
 
         for i, z in enumerate(zlist):
             res_i = 0
-            T = Tz(z, self.mp.M)
 
             for j, kc in enumerate(self.kc_list):
                 kc = self.kc_list[j]

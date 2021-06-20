@@ -8,6 +8,8 @@ from yukawasCI import FM
 from os import path
 
 from leptotools.momentumDep import interpHFast, interpFast
+from leptotools.scantools import leptogenesisScanSetup
+
 
 '''
 These are the (interpolated) temperature dependent coefficients 
@@ -178,10 +180,38 @@ class Rates_Jurai(Rates_Interface):
         self.hP_all = lru_cache(maxsize=None)(lambda T: hP_(common.zT(T, mp.M)))
         self.hM_all = lru_cache(maxsize=None)(lambda T: hM_(common.zT(T, mp.M)))
 
-
     @lru_cache(maxsize=None)
     def get_averaged_rates(self):
-        raise Exception("This class does not support averaged rates (yet!)")
+        ls = leptogenesisScanSetup(self.mp.M)
+        if self.H == 1:
+            ls.set_ordering("NO")
+        else:
+            ls.set_ordering("IH")
+
+        ls.set_dM(self.mp.dM)
+        ls.set_romega(self.mp.Rew)
+        ls.set_iomega(self.mp.Imw)
+        ls.set_delta(self.mp.delta)
+        ls.set_eta(self.mp.eta)
+        ls.set_xi(1)
+        ls.set_CI()
+
+        nugp = lambda T: ls.gammanuP(common.zT(T, self.mp.M)) * T
+        nugm = lambda T: ls.gammanuM(common.zT(T, self.mp.M)) * T
+        hnlgp = lambda T: ls.gammaNP(common.zT(T, self.mp.M)) * T
+        hnlgm = lambda T: ls.gammaNM(common.zT(T, self.mp.M)) * T
+        hnlhp = lambda T: ls.hNP(common.zT(T, self.mp.M)) * T
+        hnlhm = lambda T: ls.hNM(common.zT(T, self.mp.M)) * T
+        hnlh0 = lambda T: ls.hNM0(common.zT(T, self.mp.M)) * T
+        hnldeq = lambda T: 0 #TODO!
+
+        tc = TDependentRateCoeffs(
+            nugp=nugp, nugm=nugm, hnlgp=hnlgp, hnlgm=hnlgm,
+            hnlhp=hnlhp,hnlhm=hnlhm,hnlh0=hnlh0,hnldeq=hnldeq
+        )
+
+        return rates_from_tc(tc, self.mp, self.H)
+
 
     @lru_cache(maxsize=None)
     def get_rates(self, kc):

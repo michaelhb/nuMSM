@@ -23,7 +23,7 @@ def get_scan_points(points_per_dim, M, delta, eta, Rew, dM_min, dM_max):
     return np.array(points)
 
 if __name__ == "__main__":
-    #Args: yaml file, db file, axsize
+    #Args: yaml file, db file, axsize, outfile
     yaml_file = argv[1]
     db_name = argv[2]
     axsize = int(argv[3])
@@ -58,8 +58,8 @@ if __name__ == "__main__":
             raise Exception("Missing point! {}".format(mp))
         res_plot.append([bau, dm, Imw, time_sol])
 
-    outfile_bau_plot = path.join(output_dir, "grid_scan_dm_imw.png")
-    outfile_timing_plot = path.join(output_dir, "grid_scan_dm_imw_timing.png")
+    outfile_bau_plot = path.join(output_dir, "grid_scan_dm_imw_{}.png".format(tag))
+    outfile_timing_plot = path.join(output_dir, "grid_scan_dm_imw_timing.png".format(tag))
     title = "M = {}".format(M)
 
     contour_dm_imw_comp([(tag, np.array(res_plot))], axsize, title, outfile_bau_plot)
