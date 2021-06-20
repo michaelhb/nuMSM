@@ -222,6 +222,7 @@ class AveragedSolver(Solver):
         s = self.smdata.s(self.T0)
 
         n_plus0 = -np.identity(2)*neq/s
+        # n_plus0 = -((self.T0**3)*np.identity(2) * neq) / s
         r_plus0 = np.einsum('kij,ji->k',tau,n_plus0)
 
         res = np.concatenate([[0,0,0],r_plus0,[0,0,0,0]])
@@ -244,8 +245,9 @@ class AveragedSolver(Solver):
         :param rt: see common.ModelParams
         :return: (4,3) matrix appearing in the (3,1) block of the evolution matrix
         """
-        susc = self.susc(Tz(z, self.mp.M))
-        reGBt_N_a = np.real(self.rates.GammaTilde_N_a(z))
+        T = Tz(z, self.mp.M)
+        susc = self.susc(T)
+        reGBt_N_a = np.real(self.rates.GammaTilde_N_a(z)) #* (T**3)
         return np.einsum('kij,aji,ab->kb',tau,reGBt_N_a,susc)
 
     def Yi(self, z):
@@ -254,8 +256,9 @@ class AveragedSolver(Solver):
         :param rt: see common.ModelParams
         :return: (4,3) matrix appearing in the (2,1) block of the evolution matrix
         """
-        susc = self.susc(Tz(z, self.mp.M))
-        imGBt_N_a = np.imag(self.rates.GammaTilde_N_a(z))
+        T = Tz(z, self.mp.M)
+        susc = self.susc(T)
+        imGBt_N_a = np.imag(self.rates.GammaTilde_N_a(z)) #* (T**3)
         return np.einsum('kij,aji,ab->kb',tau,imGBt_N_a,susc)
 
     def source_term(self, z):
@@ -281,6 +284,9 @@ class AveragedSolver(Solver):
         T = Tz(z, self.mp.M)
         GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, HB_I,  GB_N, Seq = [R(z) for R in self.rates]
 
+        ### Account for expanding universe ###
+        #GBt_nu_a /= T**3
+
         jac = jacobian(z, self.mp, self.smdata)
 
         HB_0 = HB_N - HB_I
@@ -291,8 +297,8 @@ class AveragedSolver(Solver):
         b13 = -tr_h(np.real(GBt_nu_a))
 
         # Left col
-        b21 = -(1j/2.)*self.Yi(z)*(T**2)/6.
-        b31 = -self.Yr(z)*(T**2)/6.
+        b21 = -(1j/2.)*self.Yi(z)*(T**2)/6. #* (T**3)
+        b31 = -self.Yr(z)*(T**2)/6. #* (T**3)
 
         # Inner block
         b22_HI = -1j * Ch(np.real(HB_I)) - (1. / 2.) * Ah(np.real(GB_N))

@@ -11,6 +11,7 @@ from multiprocessing import Pool, set_start_method
 from plots import heatmap_dm_imw, contour_dm_imw, heatmap_dm_imw_timing, contour_dm_imw_comp
 from quadrature import GaussianQuadrature
 from scandb import ScanDB
+from rates import Rates_Jurai
 
 import warnings
 warnings.filterwarnings(
@@ -19,6 +20,7 @@ warnings.filterwarnings(
     module=r'.*leptotools.*'
 )
 
+ode_pars={'atol': 1e-20, 'rtol': 1e-4}
 
 # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
 #                 3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
@@ -48,8 +50,11 @@ def get_bau(point):
     print("Starting {} point {}".format(tag, mp))
     T0 = get_T0(mp)
 
-    if tag == "avg":
-        raise Exception("Not impelemented yet")
+    if "avg" in tag:
+        kc_list = np.array([1.0]) # Dummy param, remove after refactor
+        rates = Rates_Jurai(mp, H, kc_list, tot=True)
+        solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=Tsph, H=H, eig_cutoff=False,
+                                ode_pars=ode_pars, source_term=False)
     else:
         quadrature = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H, tot=True, qscheme="legendre")
         solver = QuadratureSolver(quadrature,
@@ -80,7 +85,6 @@ if __name__ == '__main__':
         delta = doc["delta"]
         eta = doc["eta"]
         Rew = doc["rew"]
-        avg = doc["avg"]
         H = int(doc["H"])
         tag = doc["tag"]
         dM_min = doc["dm_min"]
