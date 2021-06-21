@@ -29,6 +29,7 @@ kc_max = 10.0
 n_kc = 20
 cutoff = 1e4
 
+
 def get_scan_points(points_per_dim, M, delta, eta, Rew, dM_min, dM_max):
     dMs = [10**e for e in np.linspace(dM_min, dM_max, points_per_dim)]
 
@@ -48,18 +49,17 @@ def get_bau(point):
     dM, Imw, mp, scan_db_path, tag, H = point
 
     print("Starting {} point {}".format(tag, mp))
-    T0 = get_T0(mp)
 
     if "avg" in tag:
         kc_list = np.array([1.0]) # Dummy param, remove after refactor
         rates = Rates_Jurai(mp, H, kc_list, tot=True)
         solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=Tsph, H=H, fixed_cutoff=cutoff, eig_cutoff=False,
-                                ode_pars=ode_pars, source_term=False)
+                                method="Radau", ode_pars=ode_pars, source_term=False) # No source term yet!
     else:
         quadrature = GaussianQuadrature(n_kc, kc_min, kc_max, mp, H, tot=True, qscheme="legendre")
         solver = QuadratureSolver(quadrature,
                                   model_params=mp, TF=Tsph, H=H, fixed_cutoff=cutoff, eig_cutoff=False,
-                                  method="Radau", ode_pars={'atol': 1e-20, 'rtol': 1e-4}, source_term=True)
+                                  method="Radau", ode_pars=ode_pars, source_term=True)
 
     start = time.time()
     solver.solve(eigvals=False)
