@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+
+import numpy as np
 from scipy.integrate import odeint, solve_ivp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -8,6 +10,7 @@ from os import path
 from scipy.linalg import block_diag
 from scipy.linalg import eig as speig
 from scipy.sparse.linalg import eigs as sparse_eig
+from scipy import integrate
 import time
 
 # ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
@@ -59,7 +62,7 @@ class Solver(ABC):
         plt.xlabel("T")
         plt.ylabel("lepton asymmetry")
         plt.title(title, fontsize=10)
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.show()
 
     def plot_total_hnl_asymmetry(self, title=None):
@@ -67,16 +70,39 @@ class Solver(ABC):
         plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry))
         plt.xlabel("T")
         plt.ylabel("hnl asymmetry")
-        plt.title(title)
+        plt.title(title, fontsize=10)
+        plt.tight_layout()
         plt.show()
 
-    def plot_L_violation(self, title=None):
-        Tlist = self.get_Tlist()
-        plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry + self._total_lepton_asymmetry))
+    # quick dirty check
+    def print_L_violation(self):
+        lv = []
+
+        for i, T in enumerate(self.get_Tlist()):
+            lv.append(self.smdata.s(T)*(self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
+            # lv.append((self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
+
+        print(lv)
+
+    def plot_total_L(self):
+        lv = []
+
+        for i, T in enumerate(self.get_Tlist()):
+            lv.append(self.smdata.s(T)*(self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
+
+        plt.plot(self.get_Tlist(), lv)
         plt.xlabel("T")
-        plt.ylabel("L violation")
-        plt.title(title)
+        plt.ylabel("L(T)")
+        plt.title("Total lepton number")
         plt.show()
+
+    # def plot_L_violation(self, title=None):
+    #     Tlist = self.get_Tlist()
+    #     plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry + self._total_lepton_asymmetry))
+    #     plt.xlabel("T")
+    #     plt.ylabel("L violation")
+    #     plt.title(title)
+    #     plt.show()
 
     def plot_everything(self):
         plt.clf()
@@ -266,10 +292,18 @@ class AveragedSolver(Solver):
         :param rt: see common.IntegratedRates
         :return: inhomogeneous part of the ODE system
         """
+        T = Tz(z, self.mp.M)
         jac = jacobian(z, self.mp, self.smdata)
-        Seq = self.rates.Seq(z)
-        seq = np.einsum('kij,ji->k', tau, Seq)
-        return jac*np.real(np.concatenate([[0, 0, 0], seq, [0, 0, 0, 0]]))
+
+        I = lambda kc: (kc**2)*(f_Ndot(kc, T, self.mp, self.smdata) + \
+                                (3*(T**2)/MpStar(z, self.mp, self.smdata))*f_N(T, self.mp.M, kc))
+        Seq = ((T**3)/(2*np.pi**2))*(1.0/self.smdata.s(T))*integrate.quad(I, 0, np.inf)[0]
+
+        return jac*np.array([0, 0, 0, Seq, Seq, 0, 0, 0, 0, 0, 0])
+
+        # Seq = self.rates.Seq(z)
+        # seq = np.einsum('kij,ji->k', tau, Seq)
+        # return jac*np.real(np.concatenate([[0, 0, 0], seq, [0, 0, 0, 0]]))
 
     def coefficient_matrix(self, z):
         '''
@@ -354,16 +388,13 @@ class QuadratureSolver(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
 
-        if self.use_source_term == False:
-            raise Exception("Cannot disable source term for this solver")
-
-
     # Initial condition
     def get_initial_state(self):
         x0 = [0, 0, 0]
 
         for kc in self.kc_list:
             rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
+            # rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)
             x0.extend([0, 0, 0, 0])
@@ -390,6 +421,21 @@ class QuadratureSolver(Solver):
 
         return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
                                                                                       G_N)
+
+    def source_term(self, z):
+        T = Tz(z, self.mp.M)
+        jac = jacobian(z, self.mp, self.smdata)
+        Svec = [0,0,0]
+
+        for j, kc in enumerate(self.kc_list):
+            kc = self.kc_list[j]
+            St = -1*(T**3)*(1.0/self.smdata.s(T))*(
+                f_Ndot(kc, T, self.mp, self.smdata) + \
+                3.0*((T**2)/MpStar(z, self.mp, self.smdata))*f_N(T, self.mp.M, kc))
+            Svec += [St, St, 0, 0, 0, 0, 0, 0]
+
+        return jac * np.array(Svec)
+
     def coefficient_matrix(self, z):
         T = Tz(z, self.mp.M)
 
@@ -410,27 +456,30 @@ class QuadratureSolver(Solver):
             rt = self.rates[i]
             w_i = self.weights[i]
 
-            GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, H_I, GB_N, Seq = [R(z) for R in rt]
+            G_nu_a, Gt_nu_a, Gt_N_a, H_N, H_I, G_N, Seq = [R(z) for R in rt]
 
             W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
-            top_row.append(2j*W*tr_h(np.imag(GBt_nu_a)))
-            top_row.append(-W*tr_h(np.real(GBt_nu_a)))
+            top_row.append(2j*W*tr_h(np.imag(Gt_nu_a)))
+            top_row.append(-W*tr_h(np.real(Gt_nu_a)))
 
             # Left col
             left_col.append(-0.5j*self.gamma_N(z, kc, rt, imag=True))
             left_col.append(-1*self.gamma_N(z, kc, rt, imag=False))
 
-            H_0 = HB_N - H_I
+            H_0 = H_N - H_I
 
             # Diag blocks
-            b11_HI = -1j*Ch(np.real(H_I)) - 0.5*Ah(np.real(GB_N))
-            b12_HI = 0.5*Ch(np.imag(H_I)) - 0.25j*Ah(np.imag(GB_N))
-            b21_HI = 2*Ch(np.imag(H_I)) - 1j*Ah(np.imag(GB_N))
+
+            # Part involving the interaction Hamiltonian
+            b11_HI = -1j*Ch(np.real(H_I)) - 0.5*Ah(np.real(G_N))
+            b12_HI = 0.5*Ch(np.imag(H_I)) - 0.25j*Ah(np.imag(G_N))
+            b21_HI = 2*Ch(np.imag(H_I)) - 1j*Ah(np.imag(G_N))
             diag_HI.append(np.block([[b11_HI, b12_HI], [b21_HI, b11_HI]]))
 
-            b11_H0 = -1j*Ch(np.real(H_0))
+            # Everything else
+            b11_H0 = -1j*Ch(np.real(H_0)) - (3*(T**2)/MpStar(z, self.mp, self.smdata))*np.identity(4)
             b12_H0 = 0.5*Ch(np.imag(H_0))
             b21_H0 = 2*Ch(np.imag(H_0))
             diag_H0.append(np.block([[b11_H0, b12_H0], [b21_H0, b11_H0]]))
@@ -504,7 +553,10 @@ class QuadratureSolver(Solver):
                 self._eigenvalues.append(eig[0])
                 self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
-            return res
+            if self.use_source_term:
+                return res + self.source_term(z)
+            else:
+                return res
 
         def jac(z, x):
             return self.coefficient_matrix(z)

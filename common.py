@@ -31,6 +31,11 @@ def f_nu(kc):
 def f_N(T, M, kc):
     return 1.0/(np.exp(np.sqrt(M**2 + (T**2)*(kc**2))/T) + 1.0)
 
+def f_Ndot(kc, T, mp, smdata):
+    E_k = np.sqrt(mp.M**2 + (T**2)*(kc**2))
+    Mpl = MpStar(zT(T, mp.M), mp, smdata)
+    return -1*((T*E_k)/Mpl)*np.exp(E_k/T)/((1 + np.exp(E_k/T))**2)
+
 # def Tz(z, M):
 #     return M*np.exp(-z)
 #

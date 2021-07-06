@@ -28,11 +28,14 @@ if __name__ == "__main__":
     # db_name = argv[2]
     # axsize = int(argv[3])
 
-    # Args: db file, axsize, outfile, [yaml files...]
+    # Args: db file, axsize, outfile, title, [yaml files...]
     db_name = argv[1]
-    axsize = argv[2]
+    axsize = int(argv[2])
     outfile = argv[3]
-    yaml_files = argv[4:]
+    title = argv[4]
+    yaml_files = argv[5:]
+
+    print(outfile)
 
     output_dir = path.abspath(path.join(path.dirname(__file__), 'output/'))
     db_path = path.join(output_dir, db_name)
@@ -44,15 +47,14 @@ if __name__ == "__main__":
         yaml_path = path.abspath(path.join(path.dirname(__file__), yaml_file))
         with open(yaml_path) as file:
             doc = yaml.load(file, Loader=yaml.FullLoader)
-            M = doc["M"]
-            delta = doc["delta"]
-            eta = doc["eta"]
-            Rew = doc["rew"]
-            avg = doc["avg"]
+            M = float(doc["M"])
+            delta = float(doc["delta"])
+            eta = float(doc["eta"])
+            Rew = float(doc["rew"])
             H = int(doc["H"])
             tag = doc["tag"]
-            dM_min = doc["dm_min"]
-            dM_max = doc["dm_max"]
+            dM_min = int(doc["dm_min"])
+            dM_max = int(doc["dm_max"])
 
         res_plot = []
         points = get_scan_points(axsize, M, delta, eta, Rew, dM_min, dM_max)
@@ -64,8 +66,10 @@ if __name__ == "__main__":
                 raise Exception("Missing point! {}".format(mp))
             res_plot.append([bau, dm, Imw, time_sol])
 
-        res_plots.append((tag, res_plot))
+        res_plots.append((tag, np.array(res_plot)))
 
+    outfile_bau_plot = path.join(output_dir, outfile)
+    contour_dm_imw_comp(res_plots, axsize, title, outfile_bau_plot)
 
     # yaml_path = path.abspath(path.join(path.dirname(__file__), yaml_file))
     # with open(yaml_path) as file:
