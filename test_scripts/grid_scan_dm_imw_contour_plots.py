@@ -1,7 +1,4 @@
-import numpy as np
-import matplotlib.pyplot as plt
 from scandb import ScanDB
-from os import path
 from sys import argv
 import yaml
 from common import *

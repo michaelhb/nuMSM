@@ -1,11 +1,11 @@
-from os import path, environ
+from os import environ
 environ["MKL_NUM_THREADS"] = "1"
 environ["NUMEXPR_NUM_THREADS"] = "1"
 environ["OMP_NUM_THREADS"] = "1"
 environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
-from multiprocessing import Pool, get_context
+from multiprocessing import get_context
 from scandb import ScanDB
 from rates import Rates_Fortran, Rates_Jurai
 from plots import bau_rdiff_heatmap

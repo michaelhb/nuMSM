@@ -13,6 +13,21 @@ Tsph = 131.7
 ''' riemann zeta(3) '''
 zeta3 = 1.20206
 
+''' active neutrino masses, per http://www.nu-fit.org/?q=node/228 '''
+msol, matm = np.sqrt([7.40e-5*1e-18, 2.494e-3*1e-18])
+msolIH, matmIH = np.sqrt([7.40e-5*1e-18, 2.465e-3*1e-18])
+m1NH, m2NH, m3NH = 0.0, msol, matm  #NH
+m1IH, m2IH, m3IH = np.sqrt(matmIH**2-msolIH**2), matmIH, 0.0  #IH
+
+''' Imw for a given common mass and total mixing. Returns a positive solution. '''
+def imw(U2, M, H):
+    if H == 1:
+        mn = m2NH + m3NH
+    elif H == 2:
+        mn = m1IH + m2IH
+
+    return 0.5*np.log((M*U2)/mn + np.sqrt(((M*U2)/mn)**2 - 1))
+
 
 def get_T0(mp):
     '''
@@ -36,12 +51,6 @@ def f_Ndot(kc, T, mp, smdata):
     Mpl = MpStar(zT(T, mp.M), mp, smdata)
     return -1*((T*E_k)/Mpl)*np.exp(E_k/T)/((1 + np.exp(E_k/T))**2)
 
-# def Tz(z, M):
-#     return M*np.exp(-z)
-#
-# def zT(T, M):
-#     return np.log(M/T)
-#
 def Tz(z, M):
     return Tsph*np.exp(-z)
 

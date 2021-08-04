@@ -21,7 +21,7 @@ def FM(M, dM, Imw, Rew, delta, eta,  H = 1, xi = 1):
         Omega = np.matrix([[0, 0],[cw, sw],[-xi*sw, xi*cw]])
         Mnu = np.sqrt([[m1, 0, 0], [0, m2, 0], [0,0,m3]])
 
-    elif H ==2:
+    elif H == 2:
         #IH case           
         th12, th13, th23  = (np.pi/180.0)*np.array([33.62, 8.58, 48.1])
         msolIH, matmIH = np.sqrt([7.40e-5*1e-18, 2.465e-3*1e-18])

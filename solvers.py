@@ -25,7 +25,7 @@ class Solver(ABC):
         self.mp = model_params
 
         self.T0 = get_T0(self.mp)
-        print("T0: {}".format(self.T0))
+        # print("T0: {}".format(self.T0))
 
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None

@@ -1,0 +1,8 @@
+db_path: "/home/mbardsley/SciCodes/nuMSM_remote/scans/output/mp_scan_test.db"
+solver_class: "AveragedSolver"
+n_kc: None
+kc_max: None
+hierarchy: 1
+cutoff: None
+ode_atol: 1e-20
+ode_rtol: 1e-4

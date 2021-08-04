@@ -1,4 +1,4 @@
-from os import path, environ
+from os import environ
 from sys import argv
 import yaml
 environ["MKL_NUM_THREADS"] = "1"
@@ -7,8 +7,7 @@ environ["OMP_NUM_THREADS"] = "1"
 environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
 from solvers import *
-from multiprocessing import Pool, set_start_method
-from plots import heatmap_dm_imw, contour_dm_imw, heatmap_dm_imw_timing, contour_dm_imw_comp
+from multiprocessing import Pool
 from quadrature import GaussianQuadrature
 from scandb import ScanDB
 from rates import Rates_Jurai
@@ -102,7 +101,7 @@ if __name__ == '__main__':
         dm, Imw, mp = point
         bau, time_sol = db.get_bau(mp, tag)
         if bau is None:
-            points_scan.append(((*point, db_path, tag, H)))
+            points_scan.append((*point, db_path, tag, H))
         else:
             print("Got from cache: {}".format(mp))
 

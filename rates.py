@@ -186,7 +186,7 @@ class Rates_Jurai(Rates_Interface):
         if self.H == 1:
             ls.set_ordering("NO")
         else:
-            ls.set_ordering("IH")
+            ls.set_ordering("IO")
 
         ls.set_dM(self.mp.dM)
         ls.set_romega(self.mp.Rew)
@@ -197,11 +197,11 @@ class Rates_Jurai(Rates_Interface):
         ls.set_CI()
 
         nugp = lambda T: ls.gammanuP(common.zT(T, self.mp.M)) * T
-        # nugm = lambda T: ls.gammanuM(common.zT(T, self.mp.M)) * T
-        nugm = lambda T: 0
+        nugm = lambda T: ls.gammanuM(common.zT(T, self.mp.M)) * T
+        # nugm = lambda T: 0
         hnlgp = lambda T: ls.gammaNP(common.zT(T, self.mp.M)) * T
-        # hnlgm = lambda T: ls.gammaNM(common.zT(T, self.mp.M)) * T
-        hnlgm = lambda T: 0
+        hnlgm = lambda T: ls.gammaNM(common.zT(T, self.mp.M)) * T
+        # hnlgm = lambda T: 0
         hnlhp = lambda T: ls.hNP(common.zT(T, self.mp.M)) * T
         hnlhm = lambda T: ls.hNM(common.zT(T, self.mp.M)) * T
         hnlh0 = lambda T: ls.hNM0(common.zT(T, self.mp.M)) * T
@@ -221,11 +221,11 @@ class Rates_Jurai(Rates_Interface):
         ix = self.kc_list.tolist().index(kc)
 
         gP = lambda T: self.gP_all(T)[ix] * T
-        # gM = lambda T: self.gM_all(T)[ix] * T
-        gM = lambda T: 0
+        gM = lambda T: self.gM_all(T)[ix] * T
+        # gM = lambda T: 0
         hP = lambda T: self.hP_all(T)[ix] * T
-        # hM = lambda T: self.hM_all(T)[ix] * T
-        hM = lambda T: 0
+        hM = lambda T: self.hM_all(T)[ix] * T
+        # hM = lambda T: 0
         h0 = lambda T: -self.mp.M/np.sqrt((kc*T)**2 + self.mp.M**2)
         hnldeq = lambda T: 0 # Don't call this!
 

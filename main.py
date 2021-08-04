@@ -10,7 +10,7 @@ from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, Gaussia
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
-mp = ModelParams(M=1.0, dM=1e-11, Imw=2.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)
+mp = ModelParams(M=1.0, dM=1e-10, Imw=6.362731611842983, Rew=0.8685622735647518, delta=1.487287997912878, eta=5.4351441184287035)
 
 if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     TF = Tsph
     H = 1
     ode_pars = {'atol': 1e-20, 'rtol': 1e-4}
-    # ode_pars = {'atol': 1e-13, 'rtol': 1e-4}
+    # ode_pars = {'atol': 1e-15, 'rtol': 1e-8}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
     quadrature = GaussianQuadrature(10, 0, 10, mp, H, tot=True, qscheme="legendre")
@@ -42,11 +42,11 @@ if __name__ == '__main__':
     # quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
     # kc_list = np.array(quadrature.kc_list())
 
-    # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
-    #                         ode_pars=ode_pars, source_term=use_source_term, method="Radau")
-    solver = QuadratureSolver(quadrature,
-                              model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
-                              method="Radau", ode_pars=ode_pars, source_term=use_source_term)
+    solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
+                            ode_pars=ode_pars, source_term=use_source_term, method="Radau")
+    # solver = QuadratureSolver(quadrature,
+    #                           model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
+    #                           method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()
     solver.solve(eigvals=True)
@@ -59,8 +59,8 @@ if __name__ == '__main__':
 
     print("Time (solve): {}".format(end - start))
 
-    solver.print_L_violation()
-    solver.plot_total_L()
+    # solver.print_L_violation()
+    # solver.plot_total_L()
     # solver.plot_everything()
     solver.plot_eigenvalues(title)
     # solver.plot_eigenvalues(title, use_z=True)
