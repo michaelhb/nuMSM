@@ -14,15 +14,11 @@ lock_file = path.abspath(path.join(path.dirname(__file__), 'lock'))
 
 class MPScanDB:
 
-    def __init__(self, path_, samples=[]):
+    def __init__(self, path_):
         self.conn = self.get_connection(path_)
 
         # Create table if not present
         if not self.table_exists(): self.create_table()
-
-        # Add the unprocessed samples
-        for mp in samples:
-            self.add_sample(mp)
 
     def get_connection(self, path):
         conn = None
@@ -98,7 +94,7 @@ class MPScanDB:
 
         self.conn.commit()
 
-        return res
+        return mps
 
     def save_result(self, mp, bau, time):
         """
@@ -110,7 +106,7 @@ class MPScanDB:
 
     def purge_hung_samples(self):
         c = self.conn.cursor()
-        c.exectue('''UPDATE points set lock = FALSE where bau IS NULL;''')
+        c.execute('''UPDATE points SET lock = FALSE WHERE bau IS NULL;''')
         self.conn.commit()
 
     def close_conn(self):
