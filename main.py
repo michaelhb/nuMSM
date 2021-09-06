@@ -42,11 +42,11 @@ if __name__ == '__main__':
     # quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
     # kc_list = np.array(quadrature.kc_list())
 
-    solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
-                            ode_pars=ode_pars, source_term=use_source_term, method="Radau")
-    # solver = QuadratureSolver(quadrature,
-    #                           model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
-    #                           method="Radau", ode_pars=ode_pars, source_term=use_source_term)
+    # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
+    #                         ode_pars=ode_pars, source_term=use_source_term, method="Radau")
+    solver = QuadratureSolver(quadrature,
+                              model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
+                              method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()
     solver.solve(eigvals=True)

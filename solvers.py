@@ -393,8 +393,8 @@ class QuadratureSolver(Solver):
         x0 = [0, 0, 0]
 
         for kc in self.kc_list:
-            rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
-            # rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2)
+            # rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
+            rho_plus_0 = -1 * f_N(self.T0, self.mp.M, kc) * np.identity(2)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)
             x0.extend([0, 0, 0, 0])
@@ -419,7 +419,9 @@ class QuadratureSolver(Solver):
 
         G_N = np.imag(rt.GammaTilde_N_a(z)) if imag else np.real(rt.GammaTilde_N_a(z))
 
-        return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
+        # return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
+        #                                                                               G_N)
+        return self.smdata.s(T)*(2.0/T) * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
                                                                                       G_N)
 
     def source_term(self, z):
