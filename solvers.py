@@ -440,6 +440,7 @@ class QuadratureSolver(Solver):
 
     def coefficient_matrix(self, z):
         T = Tz(z, self.mp.M)
+        s = self.smdata.s(T)
 
         # Top left block, only part that doesn't depend on kc.
         g_nu = -self.gamma_omega(z)
@@ -460,7 +461,8 @@ class QuadratureSolver(Solver):
 
             G_nu_a, Gt_nu_a, Gt_N_a, H_N, H_I, G_N, Seq = [R(z) for R in rt]
 
-            W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
+            # W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
+            W = (T**3 / (2 * s * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
             top_row.append(2j*W*tr_h(np.imag(Gt_nu_a)))
