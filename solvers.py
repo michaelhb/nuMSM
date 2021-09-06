@@ -479,7 +479,7 @@ class QuadratureSolver(Solver):
             diag_HI.append(np.block([[b11_HI, b12_HI], [b21_HI, b11_HI]]))
 
             # Everything else
-            b11_H0 = -1j*Ch(np.real(H_0)) - (3*(T**2)/MpStar(z, self.mp, self.smdata))*np.identity(4)
+            b11_H0 = -1j*Ch(np.real(H_0)) #- (3*(T**2)/MpStar(z, self.mp, self.smdata))*np.identity(4)
             b12_H0 = 0.5*Ch(np.imag(H_0))
             b21_H0 = 2*Ch(np.imag(H_0))
             diag_H0.append(np.block([[b11_H0, b12_H0], [b21_H0, b11_H0]]))
