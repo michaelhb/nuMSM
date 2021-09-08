@@ -10,11 +10,11 @@ if __name__ == "__main__":
     # Fixed parameters for the test
     H_ = 1
     M_ = 1.0
-    dM_ = 1e-10
+    dM_ = 1e-9
     Imw_ = 0.5
 
     # Generate the grid
-    axis_size = 5
+    axis_size = 30
     Rew_list = np.linspace(0, 2*np.pi, axis_size)
     delta_list = np.linspace(0, 2*np.pi, axis_size)
     eta_list = np.linspace(0, 2*np.pi, axis_size)
