@@ -1,0 +1,8 @@
+db_path: "/home/565/mb8210/SciCodes/nuMSM/scans/output/mp_scan_test_avg.db"
+solver_class: "AveragedSolver"
+n_kc:
+kc_max:
+hierarchy: 1
+cutoff:
+ode_atol: 1e-20
+ode_rtol: 1e-4
