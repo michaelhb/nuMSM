@@ -1,8 +1,8 @@
-db_path: "/home/565/mb8210/SciCodes/nuMSM/scans/output/mp_scan_test_avg.db"
+db_path: "/home/565/mb8210/SciCodes/nuMSM/scans/output/mp_scan_test_nci_quad_sw.db"
 solver_class: "QuadratureSolver"
 n_kc: 10
 kc_max: 10
 hierarchy: 1
 cutoff: 1e-4
 ode_atol: 1e-20
-ode_rtol: 1e-4
+ode_rtol: 1e-4 
