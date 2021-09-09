@@ -12,7 +12,7 @@ if __name__ == "__main__":
     M_ = 1.0
     dM_ = 1e-9
     Imw_ = imw(1e-5, M_, H=H_)
-    print("Imw: {}".format(imw))
+    print("Imw: {}".format(Imw_))
     # Imw_ = 0.5
 
     # Generate the grid
