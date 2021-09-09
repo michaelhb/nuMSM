@@ -11,7 +11,9 @@ if __name__ == "__main__":
     H_ = 1
     M_ = 1.0
     dM_ = 1e-9
-    Imw_ = 0.5
+    Imw_ = imw(1e-5, M_, H=H_)
+    print("Imw: {}".format(imw))
+    # Imw_ = 0.5
 
     # Generate the grid
     axis_size = 30
