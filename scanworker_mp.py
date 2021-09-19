@@ -83,10 +83,10 @@ if rank == 0: # sample dispatcher / result recorder
             logging.info("proc 0: got sample request")
 
             worker_rank = message[1]
-            samples = db.get_and_lock(tag)
+            sample = db.get_and_lock(tag)
 
             # Samples are exhausted; shut down worker
-            if len(samples) == 0:
+            if sample is None:
                 n_finished += 1
                 logging.info("proc 0: samples exhausted, terminating worker")
                 comm.send("terminate_worker", dest=worker_rank)
@@ -99,7 +99,6 @@ if rank == 0: # sample dispatcher / result recorder
 
             # Send sample as requested
             else:
-                sample = samples[0]
                 logging.info("proc 0: sending sample to worker {}".format(worker_rank))
                 comm.send(sample, dest=worker_rank)
 
@@ -108,7 +107,6 @@ if rank == 0: # sample dispatcher / result recorder
             mp, bau, time, worker_rank = message
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
             db.save_result(mp, tag, bau, time)
-
 
 else: # worker process
     while True:
