@@ -1,4 +1,4 @@
-db_path: "/home/565/mb8210/SciCodes/nuMSM/scans/output/mp_scan_test_nci_quad_sw.db"
+db_path: "/home/565/mb8210/SciCodes/nuMSM/test_scans/output/mp_scan_test_nci_quad_sw.db"
 solver_class: "QuadratureSolver"
 n_kc: 10
 kc_max: 10

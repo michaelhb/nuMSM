@@ -1,4 +1,4 @@
-db_path: "/home/bardsley/SciCodes/nuMSM_remote/scans/output/mp_scan_test.db"
+db_path: "/home/bardsley/SciCodes/nuMSM_remote/test_scans/output/mp_scan_test.db"
 solver_class: "AveragedSolver"
 n_kc:
 kc_max:

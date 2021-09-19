@@ -1,4 +1,4 @@
-db_path: "/home/565/mb8210/SciCodes/nuMSM/scans/output/mp_scan_test_avg.db"
+db_path: "/home/565/mb8210/SciCodes/nuMSM/test_scans/output/mp_scan_test_avg.db"
 solver_class: "AveragedSolver"
 n_kc:
 kc_max:
