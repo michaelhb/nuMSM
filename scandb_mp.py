@@ -119,7 +119,7 @@ class MPScanDB:
             c.execute('''UPDATE points SET lock = TRUE WHERE hash = ?;''', (hash_,))
             sample = Sample(M=M_, dM=dM_, Imw=Imw_, Rew=Rew_, delta=delta_, eta=eta_,
                               tag=tag_, description=description_, solvername=solvername_,
-                              n_kc=n_kc_, kc_max=kc_max_, cutoff=cutoff_)
+                              n_kc=n_kc_, kc_max=kc_max_, cutoff=cutoff_, heirarchy=heirarchy_)
 
         self.conn.commit()
 
