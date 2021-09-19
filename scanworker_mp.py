@@ -38,14 +38,14 @@ def get_solver(sample):
     if sample.solvername == "AveragedSolver":
         rates = Rates_Jurai(sample, sample.heirarchy, np.array([1.0]), tot=True)
         solver = solvers.AveragedSolver(
-            model_params=mp, rates_interface=rates, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff,
+            model_params=sample, rates_interface=rates, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff,
             eig_cutoff=False, method="Radau", ode_pars=ode_pars, source_term=True)
 
     elif sample.solvername == "QuadratureSolver":
         quadrature = GaussianQuadrature(
             sample.n_kc, 0.0, sample.kc_max, mp, sample.heirarchy, tot=True, qscheme="legendre")
         solver = solvers.QuadratureSolver(quadrature,
-            model_params=mp, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
+            model_params=sample, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
             method="Radau", ode_pars=ode_pars, source_term=True)
     else:
         raise Exception("Unknown solver class!")
