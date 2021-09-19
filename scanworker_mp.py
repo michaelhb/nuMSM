@@ -54,7 +54,7 @@ def get_solver(sample):
 
 db_path = sys.argv[1]
 
-if len(sys.argv > 2):
+if len(sys.argv) > 2:
     tag = sys.argv[2]
 else:
     tag = None
