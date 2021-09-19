@@ -126,7 +126,6 @@ else: # worker process
         # Otherwise, process the sample
         else:
             sample = message
-            mp = mp_from_sample(sample)
             logging.info("worker {}: recieved sample for processing".format(rank))
             solver = get_solver(sample)
             start = time.time()
@@ -134,11 +133,11 @@ else: # worker process
             end = time.time()
             time_sol = end - start
             bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
-            logging.info("Point {} finished in {} s, BAU = {}".format(mp, time_sol, bau))
+            logging.info("Point {} finished in {} s, BAU = {}".format(sample, time_sol, bau))
 
             # Send result back to process 0
             logging.info("worker {}: sending results to proc 0".format(rank))
-            comm.send((mp, bau, time_sol, rank), dest=0)
+            comm.send((sample, bau, time_sol, rank), dest=0)
 
 
 

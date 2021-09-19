@@ -14,9 +14,6 @@ to be run. These are initialised as "empty" entries with bau=NONE, lock=FALSE.
 
 Sample = namedtuple("Sample", ModelParams._fields + ("tag", "description", "solvername", "n_kc", "kc_max", "heirarchy", "cutoff"))
 
-def mp_from_sample(sample):
-    return ModelParams(*list(map(lambda f: getattr(sample, f), ModelParams._fields)))
-
 class MPScanDB:
 
     def __init__(self, path_):
