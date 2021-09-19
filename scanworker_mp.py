@@ -1,11 +1,10 @@
 from common import *
-import yaml
 import sys
 import solvers
 import time
 from rates import Rates_Jurai
 from quadrature import GaussianQuadrature
-from scandb_mp import MPScanDB
+from scandb_mp import *
 from mpi4py import MPI
 
 # Ensure numpy, scipy, etc don't spawn extra threads
@@ -29,52 +28,36 @@ warnings.filterwarnings(
 
 import logging
 logging.basicConfig(level=logging.INFO)
+ode_atol = 1e-20
+ode_rtol = 1e-4
 
-def get_solver(mp, solver_class, n_kc, kc_max, H, cutoff, ode_atol, ode_rtol):
+def get_solver(sample):
     ode_pars = {'atol': ode_atol, 'rtol': ode_rtol}
 
     # Kludge city
-    if solver_class == "AveragedSolver":
-        rates = Rates_Jurai(mp, H, np.array([1.0]), tot=True)
+    if sample.solvername == "AveragedSolver":
+        rates = Rates_Jurai(sample, sample.heirarchy, np.array([1.0]), tot=True)
         solver = solvers.AveragedSolver(
-            model_params=mp, rates_interface=rates, TF=Tsph, H=H, fixed_cutoff=cutoff,
+            model_params=mp, rates_interface=rates, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff,
             eig_cutoff=False, method="Radau", ode_pars=ode_pars, source_term=True)
 
-    elif solver_class == "QuadratureSolver":
+    elif sample.solvername == "QuadratureSolver":
         quadrature = GaussianQuadrature(
-            n_kc, 0.0, kc_max, mp, H, tot=True, qscheme="legendre")
+            sample.n_kc, 0.0, sample.kc_max, mp, sample.heirarchy, tot=True, qscheme="legendre")
         solver = solvers.QuadratureSolver(quadrature,
-            model_params=mp, TF=Tsph, H=H, fixed_cutoff=cutoff, eig_cutoff=False,
+            model_params=mp, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
             method="Radau", ode_pars=ode_pars, source_term=True)
     else:
         raise Exception("Unknown solver class!")
 
     return solver
 
+db_path = sys.argv[1]
 
-stream = open(sys.argv[1], 'r')
-config = yaml.load(stream, Loader=yaml.FullLoader)
-
-# Non optional params
-db_path = config["db_path"]
-solver_class = config["solver_class"]
-H = int(config["hierarchy"])
-ode_atol = float(config["ode_atol"])
-ode_rtol = float(config["ode_rtol"])
-
-# Optional params
-if config["n_kc"] is not None:
-    n_kc = int(config["n_kc"])
+if len(sys.argv > 2):
+    tag = sys.argv[2]
 else:
-    n_kc = None
-if config["kc_max"] is not None:
-    kc_max = int(config["kc_max"])
-else:
-    kc_max = None
-if config["cutoff"] is not None:
-    cutoff = float(config["cutoff"])
-else:
-    cutoff = None
+    tag = None
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -100,10 +83,10 @@ if rank == 0: # sample dispatcher / result recorder
             logging.info("proc 0: got sample request")
 
             worker_rank = message[1]
-            mps = db.get_and_lock(1)
+            samples = db.get_and_lock(tag)
 
             # Samples are exhausted; shut down worker
-            if len(mps) == 0:
+            if len(samples) == 0:
                 n_finished += 1
                 logging.info("proc 0: samples exhausted, terminating worker")
                 comm.send("terminate_worker", dest=worker_rank)
@@ -116,15 +99,15 @@ if rank == 0: # sample dispatcher / result recorder
 
             # Send sample as requested
             else:
-                mp = mps[0]
+                sample = samples[0]
                 logging.info("proc 0: sending sample to worker {}".format(worker_rank))
-                comm.send(mp, dest=worker_rank)
+                comm.send(sample, dest=worker_rank)
 
         # Message type 2: return of result
         else:
             mp, bau, time, worker_rank = message
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
-            db.save_result(mp, bau, time)
+            db.save_result(mp, tag, bau, time)
 
 
 else: # worker process
@@ -142,9 +125,10 @@ else: # worker process
             sys.exit(0)
         # Otherwise, process the sample
         else:
-            mp = message
+            sample = message
+            mp = mp_from_sample(sample)
             logging.info("worker {}: recieved sample for processing".format(rank))
-            solver = get_solver(mp, solver_class, n_kc, kc_max, H, cutoff, ode_atol, ode_rtol)
+            solver = get_solver(sample)
             start = time.time()
             solver.solve(eigvals=False)
             end = time.time()

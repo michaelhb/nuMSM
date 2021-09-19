@@ -10,7 +10,7 @@ from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, Gaussia
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
-mp = ModelParams(M=1.0, dM=1e-9, Imw=6.362731611842983, Rew=0.785398, delta=3.14159, eta=4.71239)
+mp = ModelParams(M=1.0, dM=1e-9, Imw=5.0, Rew=0.785398, delta=3.14159, eta=4.71239)
 
 if __name__ == '__main__':
     # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
@@ -61,11 +61,11 @@ if __name__ == '__main__':
 
     # solver.print_L_violation()
     # solver.plot_total_L()
-    # solver.plot_everything()
+    # # solver.plot_everything()
     solver.plot_eigenvalues(title)
-    # solver.plot_eigenvalues(title, use_z=True)
+    # # solver.plot_eigenvalues(title, use_z=True)
     solver.plot_total_lepton_asymmetry(title)
-    solver.plot_total_hnl_asymmetry(title)
+    # solver.plot_total_hnl_asymmetry(title)
     # solver.plot_L_violation()
     print("BAU: {:.3e}".format(bau))
 
