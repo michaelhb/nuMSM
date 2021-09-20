@@ -14,7 +14,7 @@ if __name__ == '__main__':
     config = yaml.load(stream, Loader=yaml.FullLoader)
 
     # Instantiate DB
-    db = MPScanDB(sys.argv[3])
+    db = MPScanDB(sys.argv[3], fast_insert=True)
 
     # Create and load cube samples
     Rew_list = np.linspace(0, 2*np.pi, axis_size)

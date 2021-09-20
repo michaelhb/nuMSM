@@ -17,17 +17,18 @@ Sample = namedtuple("Sample", ModelParams._fields + ("tag", "description", "solv
 
 class MPScanDB:
 
-    def __init__(self, path_):
+    def __init__(self, path_, fast_insert=False):
         self.conn = self.get_connection(path_)
 
         # Create table if not present
         if not self.table_exists(): self.create_table()
 
         # Speedup, maybe?
-        c = self.conn.cursor()
-        c.execute("PRAGMA journal_mode = WAL;")
-        c.execute("PRAGMA synchronous = NORMAL;")
-        self.conn.commit()
+        if fast_insert:
+            c = self.conn.cursor()
+            c.execute("PRAGMA journal_mode = WAL;")
+            c.execute("PRAGMA synchronous = NORMAL;")
+            self.conn.commit()
 
     def get_connection(self, path):
         conn = None
@@ -134,7 +135,7 @@ class MPScanDB:
         """
         hash = self.get_hash(mp, tag)
         c = self.conn.cursor()
-        
+
         c.execute('''UPDATE points SET bau = ?, time = ? WHERE hash = ?;''', (bau, time, hash))
         self.conn.commit()
 
