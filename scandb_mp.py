@@ -1,5 +1,6 @@
 import sqlite3
 import hashlib
+import sys
 from os import path
 # import fasteners
 from common import *
@@ -75,6 +76,7 @@ class MPScanDB:
         Add an (unprocessed) sample to the DB.
         """
         hash = self.get_hash(mp, tag)
+
         c = self.conn.cursor()
         c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
             False, hash, mp.M, mp.dM, mp.Imw, mp.Rew, mp.delta, mp.eta,
@@ -107,6 +109,10 @@ class MPScanDB:
                             FROM points WHERE lock = FALSE and tag = ? LIMIT 1''', (tag,))
 
         res = c.fetchall()
+
+        if len(res) > 1:
+            raise Exception("Hash collision!")
+
         sample = None
 
         # Lock the fetched records and build ModelParams
@@ -128,6 +134,7 @@ class MPScanDB:
         """
         hash = self.get_hash(mp, tag)
         c = self.conn.cursor()
+        
         c.execute('''UPDATE points SET bau = ?, time = ? WHERE hash = ?;''', (bau, time, hash))
         self.conn.commit()
 

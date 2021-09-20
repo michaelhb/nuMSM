@@ -15,8 +15,8 @@ test_quad_defaults:
   dM: 1e-9
   Imw: 5.0
   solver_class: "QuadratureSolver"
-  n_kc: 0
-  kc_max: 0
+  n_kc: 10
+  kc_max: 10
   cutoff: 1e4
 test_quad_more_modes:
   description: "Test cube (M=1.0,dM=1e-9,Imw=5.0), quad solver, n_kc=20, kc_max=15"

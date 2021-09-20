@@ -104,9 +104,9 @@ if rank == 0: # sample dispatcher / result recorder
 
         # Message type 2: return of result
         else:
-            mp, bau, time, worker_rank = message
+            sample, bau, time, worker_rank = message
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
-            db.save_result(mp, tag, bau, time)
+            db.save_result(sample, sample.tag, bau, time)
 
 else: # worker process
     while True:
