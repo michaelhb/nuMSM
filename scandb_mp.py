@@ -129,6 +129,7 @@ class MPScanDB:
         hash = self.get_hash(mp, tag)
         c = self.conn.cursor()
         c.execute('''UPDATE points SET bau = ?, time = ? WHERE hash = ?;''', (bau, time, hash))
+        self.conn.commit()
 
     def purge_hung_samples(self):
         c = self.conn.cursor()
