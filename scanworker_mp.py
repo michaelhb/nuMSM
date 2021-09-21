@@ -69,7 +69,7 @@ n_finished = 0
 
 if rank == 0: # sample dispatcher / result recorder
     # Instantiate DB connection
-    db = MPScanDB(db_path)
+    db = MPScanDB(db_path, fast_insert=True)
 
     # Purge any hung samples
     db.purge_hung_samples()
