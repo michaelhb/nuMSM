@@ -22,8 +22,9 @@ if __name__ == '__main__':
     # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
     #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
-    kc_list = np.linspace(0.1, 10.0, 20)
-    n_kc = kc_list.shape[0]
+    n_kc = 10
+    kc_max = 10
+    kc_list = np.linspace(0, kc_max, n_kc)
     # n_kc = 1
     cutoff = None
     eig = False
@@ -34,8 +35,8 @@ if __name__ == '__main__':
     # ode_pars = {'atol': 1e-15, 'rtol': 1e-8}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    quadrature = GaussianQuadrature(10, 0, 10, mp, H, tot=True, qscheme="legendre")
-    rates = Rates_Jurai(mp, H, kc_list, tot=True)
+    quadrature = GaussianQuadrature(n_kc, 0, kc_max, mp, H, tot=True, qscheme="legendre")
+    # rates = Rates_Jurai(mp, H, kc_list, tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
 
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     # solver.print_L_violation()
     # solver.plot_total_L()
     # # solver.plot_everything()
-    solver.plot_eigenvalues(title)
+    # solver.plot_eigenvalues(title)
     # # solver.plot_eigenvalues(title, use_z=True)
     solver.plot_total_lepton_asymmetry(title)
     # solver.plot_total_hnl_asymmetry(title)
