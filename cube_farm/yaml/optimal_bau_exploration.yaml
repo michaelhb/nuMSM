@@ -1,0 +1,180 @@
+M_01_dM_1em11_QuadratureSolver:
+  description: "Test cube (M=0.1,dM=1e-11,Imw=6.82889), quadrature solver"
+  heirarchy: 1
+  M: 0.1
+  dM: 1e-11
+  Imw: 6.82889
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_01_dM_1em6_QuadratureSolver:
+  description: "Test cube (M=0.1,dM=1e-6,Imw=6.82889), quadrature solver"
+  heirarchy: 1
+  M: 0.1
+  dM: 1e-6
+  Imw: 6.82889
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_01_dM_1em2_QuadratureSolver:
+  description: "Test cube (M=0.1,dM=1e-2,Imw=6.82889), quadrature solver"
+  heirarchy: 1
+  M: 0.1
+  dM: 1e-2
+  Imw: 6.82889
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_01_dM_1em11_AveragedSolver:
+  description: "Test cube (M=0.1,dM=1e-11,Imw=6.82889), averaged solver"
+  heirarchy: 1
+  M: 0.1
+  dM: 1e-11
+  Imw: 6.82889
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_01_dM_1em6_AveragedSolver:
+  description: "Test cube (M=0.1,dM=1e-6,Imw=6.82889), averaged solver"
+  heirarchy: 1
+  M: 0.1
+  dM: 1e-6
+  Imw: 6.82889
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_01_dM_1em2_AveragedSolver:
+  description: "Test cube (M=0.1,dM=1e-2,Imw=6.82889), averaged solver"
+  heirarchy: 1
+  M: 0.1
+  dM: 1e-2
+  Imw: 6.82889
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_1_dM_1em11_QuadratureSolver:
+  description: "Test cube (M=1.0,dM=1e-11,Imw=5.56), quadrature solver"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-11
+  Imw: 5.56
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_1_dM_1em6_QuadratureSolver:
+  description: "Test cube (M=1.0,dM=1e-6,Imw=5.56), quadrature solver"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-6
+  Imw: 5.56
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_1_dM_1em2_QuadratureSolver:
+  description: "Test cube (M=1.0,dM=1e-2,Imw=5.56), quadrature solver"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-2
+  Imw: 5.56
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_1_dM_1em11_AveragedSolver:
+  description: "Test cube (M=1.0,dM=1e-11,Imw=5.56), averaged solver"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-11
+  Imw: 5.56
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_1_dM_1em6_AveragedSolver:
+  description: "Test cube (M=1.0,dM=1e-6,Imw=5.56), averaged solver"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-6
+  Imw: 5.56
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_1_dM_1em2_AveragedSolver:
+  description: "Test cube (M=1.0,dM=1e-2,Imw=5.56), averaged solver"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-2
+  Imw: 5.56
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_10_dM_1em11_QuadratureSolver:
+  description: "Test cube (M=10.0,dM=1e-11,Imw=3.54325), quadrature solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-11
+  Imw: 3.54325
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_10_dM_1em6_QuadratureSolver:
+  description: "Test cube (M=10.0,dM=1e-6,Imw=3.54325), quadrature solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-6
+  Imw: 3.54325
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_10_dM_1em2_QuadratureSolver:
+  description: "Test cube (M=10.0,dM=1e-2,Imw=3.54325), quadrature solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-2
+  Imw: 3.54325
+  solver_class: "QuadratureSolver"
+  n_kc: 10
+  kc_max: 10
+  cutoff: 1e4
+M_10_dM_1em11_AveragedSolver:
+  description: "Test cube (M=10.0,dM=1e-11,Imw=3.54325), averaged solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-11
+  Imw: 3.54325
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_10_dM_1em6_AveragedSolver:
+  description: "Test cube (M=10.0,dM=1e-6,Imw=3.54325), averaged solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-6
+  Imw: 3.54325
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_10_dM_1em2_AveragedSolver:
+  description: "Test cube (M=10.0,dM=1e-2,Imw=3.54325), averaged solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-2
+  Imw: 3.54325
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
