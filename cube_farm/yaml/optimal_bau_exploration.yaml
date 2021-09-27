@@ -5,7 +5,7 @@ M_01_dM_1em11_QuadratureSolver:
   dM: 1e-11
   Imw: 6.82889
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_01_dM_1em6_QuadratureSolver:
@@ -15,7 +15,7 @@ M_01_dM_1em6_QuadratureSolver:
   dM: 1e-6
   Imw: 6.82889
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_01_dM_1em2_QuadratureSolver:
@@ -25,7 +25,7 @@ M_01_dM_1em2_QuadratureSolver:
   dM: 1e-2
   Imw: 6.82889
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_01_dM_1em11_AveragedSolver:
@@ -65,7 +65,7 @@ M_1_dM_1em11_QuadratureSolver:
   dM: 1e-11
   Imw: 5.56
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_1_dM_1em6_QuadratureSolver:
@@ -75,7 +75,7 @@ M_1_dM_1em6_QuadratureSolver:
   dM: 1e-6
   Imw: 5.56
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_1_dM_1em2_QuadratureSolver:
@@ -85,7 +85,7 @@ M_1_dM_1em2_QuadratureSolver:
   dM: 1e-2
   Imw: 5.56
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_1_dM_1em11_AveragedSolver:
@@ -125,7 +125,7 @@ M_10_dM_1em11_QuadratureSolver:
   dM: 1e-11
   Imw: 3.54325
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_10_dM_1em6_QuadratureSolver:
@@ -135,7 +135,7 @@ M_10_dM_1em6_QuadratureSolver:
   dM: 1e-6
   Imw: 3.54325
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_10_dM_1em2_QuadratureSolver:
@@ -145,7 +145,7 @@ M_10_dM_1em2_QuadratureSolver:
   dM: 1e-2
   Imw: 3.54325
   solver_class: "QuadratureSolver"
-  n_kc: 10
+  n_kc: 15
   kc_max: 10
   cutoff: 1e4
 M_10_dM_1em11_AveragedSolver:
