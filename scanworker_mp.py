@@ -109,7 +109,10 @@ if rank == 0: # sample dispatcher / result recorder
         else:
             sample, bau, time, worker_rank = message
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
+            start_wait = time.time()
             db.save_result(sample, sample.tag, bau, time)
+            end_wait = time.time()
+            logging.info("db write took {}s".format(end_wait - start_wait))
 
 else: # worker process
     while True:
