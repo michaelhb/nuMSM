@@ -136,7 +136,13 @@ else: # worker process
             logging.info("worker {}: recieved sample for processing, waited {}s".format(rank, time_wait))
             solver = get_solver(sample)
             start = time.time()
-            solver.solve(eigvals=False)
+
+            try:
+                solver.solve(eigvals=False)
+            except Exception as e:
+                print("point failed: {}".format(sample))
+                print(e)
+                
             end = time.time()
             time_sol = end - start
             bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
