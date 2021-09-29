@@ -115,7 +115,10 @@ else: # worker process
         comm.send(("sample_please", rank), dest=0)
 
         # Wait for the sample
+        start_wait = time.time()
         message = comm.recv(source=0)
+        end_wait = time.time()
+        time_wait = end_wait - start_wait
 
         # Check for a terminate message
         if message == "terminate_worker":
@@ -124,7 +127,7 @@ else: # worker process
         # Otherwise, process the sample
         else:
             sample = message
-            logging.info("worker {}: recieved sample for processing".format(rank))
+            logging.info("worker {}: recieved sample for processing, waited {}s".format(rank, time_wait))
             solver = get_solver(sample)
             start = time.time()
             solver.solve(eigvals=False)
