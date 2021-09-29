@@ -83,7 +83,10 @@ if rank == 0: # sample dispatcher / result recorder
             logging.info("proc 0: got sample request")
 
             worker_rank = message[1]
+            start_get = time.time()
             sample = db.get_and_lock(tag)
+            end_get = time.time()
+            logging.info("got sample from db in {}s".format(end_get - start_get))
 
             # Samples are exhausted; shut down worker
             if sample is None:
