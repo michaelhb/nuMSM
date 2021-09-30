@@ -139,18 +139,20 @@ else: # worker process
 
             try:
                 solver.solve(eigvals=False)
+                end = time.time()
+                time_sol = end - start
+                bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
+                logging.info("Point {} finished in {} s, BAU = {}".format(sample, time_sol, bau))
+
+                # Send result back to process 0
+                logging.info("worker {}: sending results to proc 0".format(rank))
+                comm.send((sample, bau, time_sol, rank), dest=0)
+
             except Exception as e:
                 print("point failed: {}".format(sample))
                 print(e)
-                
-            end = time.time()
-            time_sol = end - start
-            bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
-            logging.info("Point {} finished in {} s, BAU = {}".format(sample, time_sol, bau))
 
-            # Send result back to process 0
-            logging.info("worker {}: sending results to proc 0".format(rank))
-            comm.send((sample, bau, time_sol, rank), dest=0)
+
 
 
 
