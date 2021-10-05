@@ -1,0 +1,20 @@
+M_10_dM_1em11_QuadratureSolver_SW:
+  description: "Test cube (M=10.0,dM=1e-11,Imw=7.0), quadrature solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-11
+  Imw: 7.0
+  solver_class: "QuadratureSolver"
+  n_kc: 15
+  kc_max: 10
+  cutoff: 1e4
+M_10_dM_1em11_AveragedSolver:
+  description: "Test cube (M=10.0,dM=1e-11,Imw=7.0), averaged solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 1e-11
+  Imw: 7.0
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
