@@ -1,0 +1,40 @@
+M_10_dM_5em9_QuadratureSolver_SW:
+  description: "Test cube (M=10.0,dM=5e-9,Imw=6), quadrature solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 5e-9
+  Imw: 6
+  solver_class: "QuadratureSolver"
+  n_kc: 15
+  kc_max: 10
+  cutoff: 1e4
+M_10_dM_5em9_AveragedSolver_SW:
+  description: "Test cube (M=10.0,dM=5e-9,Imw=6), averaged solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 5e-9
+  Imw: 6
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
+M_10_dM_5em9_QuadratureSolver_WW:
+  description: "Test cube (M=10.0,dM=5e-9,Imw=0.5), quadrature solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 5e-9
+  Imw: 0.5
+  solver_class: "QuadratureSolver"
+  n_kc: 15
+  kc_max: 10
+  cutoff: 1e4
+M_10_dM_5em9_AveragedSolver_wW:
+  description: "Test cube (M=10.0,dM=5e-9,Imw=0.5), averaged solver"
+  heirarchy: 1
+  M: 10.0
+  dM: 5e-9
+  Imw: 0.5
+  solver_class: "AveragedSolver"
+  n_kc: 0
+  kc_max: 0
+  cutoff: 1e4
