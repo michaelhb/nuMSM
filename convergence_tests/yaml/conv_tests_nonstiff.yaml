@@ -1,0 +1,32 @@
+dM_1em11_imw_0_0_no_cutoff:
+  description: "Regime A (non-stiff; dM = 1e-11, Imw = 0.0), no cutoff"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-11
+  Imw: 0.0
+  kc_max: 10
+  cutoff: null
+dM_1em11_imw_0_0_cutoff_1e4:
+  description: "Regime A (non-stiff; dM = 1e-11, Imw = 0.0), cutoff = 1e4"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-11
+  Imw: 0.0
+  kc_max: 10
+  cutoff: 1e4
+dM_1_78em9_imw_5_25_no_cutoff:
+  description: "Regime B (non-stiff; dM = 1.78e-09, Imw = 5.25), no cutoff"
+  heirarchy: 1
+  M: 1.0
+  dM: 1.78e-09
+  Imw: 5.25
+  kc_max: 10
+  cutoff: null
+dM_1_78em9_imw_5_25_cutoff_1e4:
+  description: "Regime B (non-stiff; dM = 1.78e-09, Imw = 5.25), cutoff = 1e4"
+  heirarchy: 1
+  M: 1.0
+  dM: 1.78e-09
+  Imw: 5.25
+  kc_max: 10
+  cutoff: 1e4

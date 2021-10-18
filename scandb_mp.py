@@ -53,15 +53,25 @@ class MPScanDB:
             time real, bau real)''')
         self.conn.commit()
 
-    def get_hash(self, mp, tag):
-        hash_str = "M: {:.5f}, dM: {:.5e}, Imw: {:.5f}, Rew: {:.5f}, delta: {:.5f}, eta: {:.5f}, tag: {}".format(
-            mp.M, mp.dM, mp.Imw, mp.Rew, mp.delta, mp.eta, tag
-        )
-        return hashlib.md5(hash_str.encode()).hexdigest()
+    def get_hash(self, sample):
 
-    def get_bau(self, mp, tag):
+        # Special handling for null cutoff
+        if sample.cutoff is None:
+            cutoff = -1
+        else:
+            cutoff = sample.cutoff
+
+        hash_str = "M: {:.5f}, dM: {:.5e}, Imw: {:.5f}, Rew: {:.5f}, delta: {:.5f}, eta: {:.5f}, tag: {}, " \
+                   "hierarchy: {}, solver_class: {}, n_kc: {}, kc_max: {:.5f}, cutoff: {:.5e}".format(
+            sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta, sample.tag,
+            sample.heirarchy, sample.solvername, sample.n_kc, sample.kc_max, cutoff
+        )
+        hash = hashlib.sha256(hash_str.encode()).hexdigest()
+        return hash
+
+    def get_bau(self, sample):
         c = self.conn.cursor()
-        hash = self.get_hash(mp, tag)
+        hash = self.get_hash(sample)
 
         # Return record if it exists
         c.execute('''SELECT bau, time FROM points WHERE hash = ? ''', (hash,))
@@ -72,16 +82,23 @@ class MPScanDB:
         else:
             return res[0]
 
-    def add_sample(self, mp, tag, description, solvername, nkc, kcmax, heirarchy, cutoff):
+    def add_sample(self, sample):
         """
         Add an (unprocessed) sample to the DB.
         """
-        hash = self.get_hash(mp, tag)
+        hash = self.get_hash(sample)
+
+        # Special handling for null cutoff
+        if sample.cutoff is None:
+            cutoff = -1
+        else:
+            cutoff = sample.cutoff
 
         c = self.conn.cursor()
         c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
-            False, hash, mp.M, mp.dM, mp.Imw, mp.Rew, mp.delta, mp.eta,
-            tag, description, solvername, nkc, kcmax, heirarchy, cutoff,
+            False, hash, sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta,
+            sample.tag, sample.description, sample.solvername, sample.n_kc, sample.kc_max,
+            sample.heirarchy, cutoff,
             None, None
         ))
         self.conn.commit()
@@ -120,6 +137,11 @@ class MPScanDB:
         for r in res:
             hash_, M_, dM_, Imw_, Rew_, delta_, eta_, tag_, description_, \
                 solvername_, n_kc_, kc_max_, heirarchy_, cutoff_ = r
+
+            # Special handling for null cutoff
+            if cutoff_ == -1:
+                cutoff_ = None
+
             c.execute('''UPDATE points SET lock = TRUE WHERE hash = ?;''', (hash_,))
             sample = Sample(M=M_, dM=dM_, Imw=Imw_, Rew=Rew_, delta=delta_, eta=eta_,
                               tag=tag_, description=description_, solvername=solvername_,
@@ -129,11 +151,11 @@ class MPScanDB:
 
         return sample
 
-    def save_result(self, mp, tag, bau, time):
+    def save_result(self, sample, bau, time):
         """
         Uses the hash function on mp to update the bau and time for the relevant record.
         """
-        hash = self.get_hash(mp, tag)
+        hash = self.get_hash(sample)
         c = self.conn.cursor()
 
         c.execute('''UPDATE points SET bau = ?, time = ? WHERE hash = ?;''', (bau, time, hash))

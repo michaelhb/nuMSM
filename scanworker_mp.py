@@ -110,7 +110,7 @@ if rank == 0: # sample dispatcher / result recorder
             sample, bau, proc_time, worker_rank = message
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
             start_wait = time.time()
-            db.save_result(sample, sample.tag, bau, proc_time)
+            db.save_result(sample, bau, proc_time)
             end_wait = time.time()
             logging.info("db write took {}s".format(end_wait - start_wait))
 

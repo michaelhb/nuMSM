@@ -10,22 +10,19 @@ from quadrature import TrapezoidalQuadrature, GaussFermiDiracQuadrature, Gaussia
 import cProfile
 from rates import Rates_Fortran, Rates_Jurai
 # #
-mp = ModelParams(M=1.0, dM=1e-9, Imw=5.0, Rew=0.785398, delta=3.14159, eta=4.71239)
+
 
 if __name__ == '__main__':
-    # kc_list = [0.3, 0.4] + [0.1 * kc for kc in range(5, 101)]
-    # kc_list = np.array([0.5, 1.0, 2.0])
-    # kc_list = np.array([1.0])
-    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.9, 2.5, 3.1, 3.9, 5.0, 10.0])
-    # kc_list = np.array([0.8, 1.6, 2.4, 3.2, 4. , 4.8, 5.6, 6.4, 7.2, 8.])
-    # kc_list = np.array([0.5, 1.0, 1.5, 2.5, 5.0])
-    # kc_list = np.array([0.5, 1.0, 1.3, 1.5, 1.7, 1.9, 2.1, 2.3, 2.5, 2.7, 2.9, 3.1,
-    #             3.3, 3.6, 3.9, 4.2, 4.6, 5.0, 5.7, 6.9, 10.0])
 
-    n_kc = 10
+    delta_opt = np.pi
+    eta_opt = (3.0*np.pi)/2.0
+    rew_opt = np.pi/4.0
+
+    mp = ModelParams(M=10.0, dM=5e-9, Imw=6, Rew=rew_opt, delta=delta_opt, eta=eta_opt)
+
+    n_kc = 15
     kc_max = 10
     kc_list = np.linspace(0, kc_max, n_kc)
-    # n_kc = 1
     cutoff = None
     eig = False
     use_source_term = True
@@ -35,19 +32,19 @@ if __name__ == '__main__':
     # ode_pars = {'atol': 1e-15, 'rtol': 1e-8}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    quadrature = GaussianQuadrature(n_kc, 0, kc_max, mp, H, tot=True, qscheme="legendre")
-    # rates = Rates_Jurai(mp, H, kc_list, tot=True)
+    # quadrature = GaussianQuadrature(n_kc, 0, kc_max, mp, H, tot=True, qscheme="legendre")
+    rates = Rates_Jurai(mp, H, [1.0], tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
 
     # quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
     # kc_list = np.array(quadrature.kc_list())
 
-    # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
-    #                         ode_pars=ode_pars, source_term=use_source_term, method="Radau")
-    solver = QuadratureSolver(quadrature,
-                              model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
-                              method="Radau", ode_pars=ode_pars, source_term=use_source_term)
+    solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
+                             ode_pars=ode_pars, source_term=use_source_term, method="Radau")
+    # solver = QuadratureSolver(quadrature,
+    #                          model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
+    #                          method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()
     solver.solve(eigvals=True)

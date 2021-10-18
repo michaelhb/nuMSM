@@ -1,25 +1,41 @@
+"""
+Args: yaml file, output db path
+"""
 from common import *
 from scandb_mp import *
 import yaml
 import sys
 
-"""
-Args: output db path
-"""
-
 if __name__ == '__main__':
-    mp = ModelParams(M=1.0, dM=1e-9, Imw=5.0, Rew=0.785398, delta=3.14159, eta=4.71239)
-    kc_maxs = [10, 20]
-    n_kcs = list(range(5,51))
-    cutoffs = [None, 1e3, 1e4, 1e5]
+    # Load yaml file
+    stream = open(sys.argv[1], 'r')
+    config = yaml.load(stream, Loader=yaml.FullLoader)
 
-    db = MPScanDB(sys.argv[1], fast_insert=True)
+    # Instantiate DB
+    db = MPScanDB(sys.argv[2], fast_insert=True)
 
-    for cutoff in cutoffs:
-        for kc_max in kc_maxs:
-            for n_kc in n_kcs:
-                tag = "conv_test_kcmax_{}_cutoff_{}_nkc_{}".format(kc_max, cutoff, n_kc)
-                desc = tag
-                solver_class = "QuadratureSolver"
-                heirarchy = 1
-                db.add_sample(mp, tag, desc, solver_class, n_kc, kc_max, heirarchy, cutoff)
+    delta_opt = np.pi
+    eta_opt = (3.0*np.pi)/2.0
+    Rew_opt = np.pi/4.0
+
+    n_kcs = list(range(15,105,5))
+
+    for tag, attrs in config.items():
+        desc = attrs["description"]
+        H = int(attrs["heirarchy"])
+        M = float(attrs["M"])
+        dM = float(attrs["dM"])
+        Imw = float(attrs["Imw"])
+        kc_max = float(attrs["kc_max"])
+
+        cutoff = attrs["cutoff"]
+        if cutoff is not None:
+            cutoff = float(cutoff)
+
+        for n_kc in n_kcs:
+            mp = ModelParams(M=M, dM=dM, Imw=Imw, Rew=Rew_opt, delta=delta_opt, eta=eta_opt)
+
+            sample = Sample(**mp._asdict(), tag=tag, description=desc, solvername="QuadratureSolver",
+                            n_kc=n_kc, kc_max=kc_max, heirarchy=H, cutoff=cutoff)
+
+            db.add_sample(sample)

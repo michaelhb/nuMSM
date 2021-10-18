@@ -29,6 +29,7 @@ if __name__ == '__main__':
                         M=float(attrs["M"]), dM=float(attrs["dM"]), Imw=float(attrs["Imw"]),
                         Rew=Rew_, delta=delta_, eta=eta_
                     )
-                    db.add_sample(mp, tag, attrs["description"], attrs["solver_class"],
-                                  int(attrs["n_kc"]), float(attrs["kc_max"]), int(attrs["heirarchy"]),
-                                  float(attrs["cutoff"]))
+                    sample = Sample(**mp._asdict(), tag=tag, description=attrs["description"], solvername=attrs["solver_class"],
+                                    n_kc=attrs["n_kc"], kc_max=attrs["kc_max"], heirarchy=attrs["heirarchy"],
+                                    cutoff=float(attrs["cutoff"]))
+                    db.add_sample(sample)
