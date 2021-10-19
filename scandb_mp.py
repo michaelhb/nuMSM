@@ -17,11 +17,14 @@ Sample = namedtuple("Sample", ModelParams._fields + ("tag", "description", "solv
 
 class MPScanDB:
 
-    def __init__(self, path_, fast_insert=False):
+    def __init__(self, path_, fast_insert=False, save_solutions=False):
         self.conn = self.get_connection(path_)
 
-        # Create table if not present
-        if not self.table_exists(): self.create_table()
+        # Create tables if not present
+        if not self.point_table_exists(): self.create_point_table()
+
+        if save_solutions and not self.solution_table_exists():
+                self.create_solution_table()
 
         # Speedup, maybe?
         if fast_insert:
@@ -40,17 +43,27 @@ class MPScanDB:
         finally:
             return conn
 
-    def table_exists(self):
+    def point_table_exists(self):
         c = self.conn.cursor()
         c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='points' ''')
         return c.fetchone()[0] == 1
 
-    def create_table(self):
+    def solution_table_exists(self):
+        c = self.conn.cursor()
+        c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='solutions' ''')
+        return c.fetchone()[0] == 1
+
+    def create_point_table(self):
         c = self.conn.cursor()
         c.execute('''CREATE TABLE points (
             lock bool, hash text, M real, dM real, Imw real, Rew real, delta real, eta real, 
             tag string, description string, solvername string, nkc integer, kcmax real, heirarchy integer, cutoff real,
             time real, bau real)''')
+        self.conn.commit()
+
+    def create_solution_table(self):
+        c = self.conn.cursor()
+        c.execute('''CREATE TABLE solutions (hash text, temp real, bau real)''')
         self.conn.commit()
 
     def get_hash(self, sample):
@@ -116,11 +129,13 @@ class MPScanDB:
         c = self.conn.cursor()
 
         if tag is None:
+            print("NO TAG")
             c.execute('''SELECT 
                             hash, M, dM, Imw, Rew, delta, eta, 
                             tag, description, solvername, nkc, kcmax, heirarchy, cutoff 
                             FROM points WHERE lock = FALSE LIMIT 1''')
         else:
+            print("TAG")
             c.execute('''SELECT 
                             hash, M, dM, Imw, Rew, delta, eta, 
                             tag, description, solvername, nkc, kcmax, heirarchy, cutoff 
@@ -160,6 +175,25 @@ class MPScanDB:
 
         c.execute('''UPDATE points SET bau = ?, time = ? WHERE hash = ?;''', (bau, time, hash))
         self.conn.commit()
+
+    def save_solution(self, sample, solution):
+        """
+        solution should be a list of (T, bau) pairs
+        """
+        hash = self.get_hash(sample)
+        c = self.conn.cursor()
+
+        for T, bau in solution:
+            c.execute('''INSERT INTO solutions VALUES (?,?,?)''', (hash, T, bau))
+
+        self.conn.commit()
+
+    def get_solution(self, sample):
+        hash = self.get_hash(sample)
+        c = self.conn.cursor()
+
+        c.execute('''SELECT T, bau FROM solutions WHERE hash = ? ORDER BY T''', (hash,))
+        return c.fetchall()
 
     def purge_hung_samples(self):
         c = self.conn.cursor()

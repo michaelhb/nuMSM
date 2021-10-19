@@ -6,6 +6,7 @@ from rates import Rates_Jurai
 from quadrature import GaussianQuadrature
 from scandb_mp import *
 from mpi4py import MPI
+import argparse
 
 # Ensure numpy, scipy, etc don't spawn extra threads
 from os import environ
@@ -52,12 +53,19 @@ def get_solver(sample):
 
     return solver
 
-db_path = sys.argv[1]
 
-if len(sys.argv) > 2:
-    tag = sys.argv[2]
-else:
-    tag = None
+# Command line interface
+parser = argparse.ArgumentParser(description="MPI-enabled BAU scan tool")
+
+parser.add_argument("--output-db", action="store", type=str, required=True)
+parser.add_argument("--tag", action="store", type=str, default=None)
+parser.add_argument("--save-solutions", action="store_true", default=False)
+
+args = parser.parse_args()
+
+db_path = args.output_db
+tag = args.tag
+save_solutions = args.save_solutions
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -69,7 +77,7 @@ n_finished = 0
 
 if rank == 0: # sample dispatcher / result recorder
     # Instantiate DB connection
-    db = MPScanDB(db_path, fast_insert=True)
+    db = MPScanDB(db_path, fast_insert=True, save_solutions=save_solutions)
 
     # Purge any hung samples
     db.purge_hung_samples()
@@ -107,10 +115,18 @@ if rank == 0: # sample dispatcher / result recorder
 
         # Message type 2: return of result
         else:
-            sample, bau, proc_time, worker_rank = message
+            if save_solutions:
+                sample, bau, proc_time, worker_rank, solution = message
+            else:
+                sample, bau, proc_time, worker_rank = message
+
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
             start_wait = time.time()
             db.save_result(sample, bau, proc_time)
+
+            if save_solutions:
+                db.save_solution(sample, solution)
+
             end_wait = time.time()
             logging.info("db write took {}s".format(end_wait - start_wait))
 
@@ -133,7 +149,7 @@ else: # worker process
         # Otherwise, process the sample
         else:
             sample = message
-            logging.info("worker {}: recieved sample for processing, waited {}s".format(rank, time_wait))
+            logging.info("worker {}: received sample for processing, waited {}s".format(rank, time_wait))
             solver = get_solver(sample)
             start = time.time()
 
@@ -146,7 +162,14 @@ else: # worker process
 
                 # Send result back to process 0
                 logging.info("worker {}: sending results to proc 0".format(rank))
-                comm.send((sample, bau, time_sol, rank), dest=0)
+
+                if save_solutions:
+                    Tlist = solver.get_Tlist()
+                    baus = solver.get_total_lepton_asymmetry()
+                    solution = list(zip(Tlist, baus))
+                    comm.send((sample, bau, time_sol, rank, solution), dest=0)
+                else:
+                    comm.send((sample, bau, time_sol, rank), dest=0)
 
             except Exception as e:
                 print("point failed: {}".format(sample))
