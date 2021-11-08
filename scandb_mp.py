@@ -53,6 +53,10 @@ class MPScanDB:
         c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='solutions' ''')
         return c.fetchone()[0] == 1
 
+    def density_table_exists(self):
+        c = self.conn.cursor()
+        c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='densities' ''')
+
     def create_point_table(self):
         c = self.conn.cursor()
         c.execute('''CREATE TABLE points (
@@ -64,6 +68,12 @@ class MPScanDB:
     def create_solution_table(self):
         c = self.conn.cursor()
         c.execute('''CREATE TABLE solutions (hash text, temp real, bau real)''')
+        self.conn.commit()
+
+    def create_density_table(self):
+        c = self.conn.cursor()
+        c.execute('''CREATE TABLE densities (hash text, temp real, rp11 real, rp22 real, rpreal real, rpimag real, 
+            rm11 real, rm22 real, rmreal real, rmimag real)''')
         self.conn.commit()
 
     def get_hash(self, sample):
@@ -129,7 +139,6 @@ class MPScanDB:
         c = self.conn.cursor()
 
         if tag is None:
-            print("NO TAG")
             c.execute('''SELECT 
                             hash, M, dM, Imw, Rew, delta, eta, 
                             tag, description, solvername, nkc, kcmax, heirarchy, cutoff 
@@ -185,6 +194,18 @@ class MPScanDB:
 
         for T, bau in solution:
             c.execute('''INSERT INTO solutions VALUES (?,?,?)''', (hash, T, bau))
+
+        self.conn.commit()
+
+    def save_densities(self, sample, densities):
+        """
+        densities should be a list of (T, kc, <8 real components>) tuples
+        """
+        hash = self.get_hash(sample)
+        c = self.conn.cursor()
+
+        for d in densities:
+            c.execute('''INSERT INTO densities VALUES (?,?,?,?,?,?,?,?,?,?,?)''',(hash, *d))
 
         self.conn.commit()
 

@@ -1,0 +1,8 @@
+example_with_kinks:
+  description: "A benchmark with kinks above Tsph (non-stiff; dM = 5e-9, Imw = 6.0), no cutoff"
+  heirarchy: 1
+  M: 1.0
+  dM: 5e-9
+  Imw: 6.0
+  kc_max: 10
+  cutoff: null

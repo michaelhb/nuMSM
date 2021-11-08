@@ -18,7 +18,7 @@ if __name__ == '__main__':
     eta_opt = (3.0*np.pi)/2.0
     rew_opt = np.pi/4.0
 
-    mp = ModelParams(M=10.0, dM=5e-9, Imw=6, Rew=rew_opt, delta=delta_opt, eta=eta_opt)
+    mp = ModelParams(M=1.0, dM=5e-9, Imw=6, Rew=rew_opt, delta=delta_opt, eta=eta_opt)
 
     n_kc = 15
     kc_max = 10
@@ -26,25 +26,25 @@ if __name__ == '__main__':
     cutoff = None
     eig = False
     use_source_term = True
-    TF = Tsph
+    TF = 10.
     H = 1
     ode_pars = {'atol': 1e-20, 'rtol': 1e-4}
     # ode_pars = {'atol': 1e-15, 'rtol': 1e-8}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    # quadrature = GaussianQuadrature(n_kc, 0, kc_max, mp, H, tot=True, qscheme="legendre")
-    rates = Rates_Jurai(mp, H, [1.0], tot=True)
+    quadrature = GaussianQuadrature(n_kc, 0, kc_max, mp, H, tot=True, qscheme="legendre")
+    # rates = Rates_Jurai(mp, H, [1.0], tot=True)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
 
     # quadrature = GaussLegendreQuadrature(20, 0.1, 10, mp, H, tot=True)
     # kc_list = np.array(quadrature.kc_list())
 
-    solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
-                             ode_pars=ode_pars, source_term=use_source_term, method="Radau")
-    # solver = QuadratureSolver(quadrature,
-    #                          model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
-    #                          method="Radau", ode_pars=ode_pars, source_term=use_source_term)
+    # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, eig_cutoff=False,
+    #                          ode_pars=ode_pars, source_term=use_source_term, method="Radau")
+    solver = QuadratureSolver(quadrature,
+                             model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
+                             method="Radau", ode_pars=ode_pars, source_term=use_source_term)
 
     start = time.time()
     solver.solve(eigvals=True)

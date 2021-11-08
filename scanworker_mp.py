@@ -29,30 +29,6 @@ warnings.filterwarnings(
 
 import logging
 logging.basicConfig(level=logging.INFO)
-ode_atol = 1e-20
-ode_rtol = 1e-4
-
-def get_solver(sample):
-    ode_pars = {'atol': ode_atol, 'rtol': ode_rtol}
-
-    # Kludge city
-    if sample.solvername == "AveragedSolver":
-        rates = Rates_Jurai(sample, sample.heirarchy, np.array([1.0]), tot=True)
-        solver = solvers.AveragedSolver(
-            model_params=sample, rates_interface=rates, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff,
-            eig_cutoff=False, method="Radau", ode_pars=ode_pars, source_term=True)
-
-    elif sample.solvername == "QuadratureSolver":
-        quadrature = GaussianQuadrature(
-            sample.n_kc, 0.0, sample.kc_max, sample, sample.heirarchy, tot=True, qscheme="legendre")
-        solver = solvers.QuadratureSolver(quadrature,
-            model_params=sample, TF=Tsph, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
-            method="Radau", ode_pars=ode_pars, source_term=True)
-    else:
-        raise Exception("Unknown solver class!")
-
-    return solver
-
 
 # Command line interface
 parser = argparse.ArgumentParser(description="MPI-enabled BAU scan tool")
@@ -60,12 +36,44 @@ parser = argparse.ArgumentParser(description="MPI-enabled BAU scan tool")
 parser.add_argument("--output-db", action="store", type=str, required=True)
 parser.add_argument("--tag", action="store", type=str, default=None)
 parser.add_argument("--save-solutions", action="store_true", default=False)
+parser.add_argument("--save-densities", action="store_true", default=False)
+parser.add_argument("--ode-atol", action="store", type=float, default=1e-20)
+parser.add_argument("--ode-rtol", action="store", type=float, default=1e-4)
+parser.add_argument("--t-final", action="store", type=float, default=Tsph)
 
 args = parser.parse_args()
 
 db_path = args.output_db
 tag = args.tag
 save_solutions = args.save_solutions
+save_densities = args.save_densities
+ode_atol = args.ode_atol
+ode_rtol = args.ode_rtol
+
+def get_solver(sample):
+    ode_pars = {'atol': ode_atol, 'rtol': ode_rtol}
+
+    # Kludge city
+    if sample.solvername == "AveragedSolver":
+
+        if save_densities:
+            raise Exception("Cannot save HNL-momentum densities when using AveragedSolver")
+
+        rates = Rates_Jurai(sample, sample.heirarchy, np.array([1.0]), tot=True)
+        solver = solvers.AveragedSolver(
+            model_params=sample, rates_interface=rates, TF=args.t_final, H=sample.heirarchy, fixed_cutoff=sample.cutoff,
+            eig_cutoff=False, method="Radau", ode_pars=ode_pars, source_term=True)
+
+    elif sample.solvername == "QuadratureSolver":
+        quadrature = GaussianQuadrature(
+            sample.n_kc, 0.0, sample.kc_max, sample, sample.heirarchy, tot=True, qscheme="legendre")
+        solver = solvers.QuadratureSolver(quadrature,
+            model_params=sample, TF=args.t_final, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
+            method="Radau", ode_pars=ode_pars, source_term=True)
+    else:
+        raise Exception("Unknown solver class!")
+
+    return solver
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -116,7 +124,7 @@ if rank == 0: # sample dispatcher / result recorder
         # Message type 2: return of result
         else:
             if save_solutions:
-                sample, bau, proc_time, worker_rank, solution = message
+                sample, bau, proc_time, worker_rank, solution_bau = message
             else:
                 sample, bau, proc_time, worker_rank = message
 
@@ -125,7 +133,7 @@ if rank == 0: # sample dispatcher / result recorder
             db.save_result(sample, bau, proc_time)
 
             if save_solutions:
-                db.save_solution(sample, solution)
+                db.save_solution(sample, solution_bau)
 
             end_wait = time.time()
             logging.info("db write took {}s".format(end_wait - start_wait))
@@ -166,8 +174,8 @@ else: # worker process
                 if save_solutions:
                     Tlist = solver.get_Tlist()
                     baus = solver.get_total_lepton_asymmetry()
-                    solution = list(zip(Tlist, baus))
-                    comm.send((sample, bau, time_sol, rank, solution), dest=0)
+                    solution_bau = list(zip(Tlist, baus))
+                    comm.send((sample, bau, time_sol, rank, solution_bau), dest=0)
                 else:
                     comm.send((sample, bau, time_sol, rank), dest=0)
 

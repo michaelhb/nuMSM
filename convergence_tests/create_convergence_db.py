@@ -1,24 +1,39 @@
-"""
-Args: yaml file, output db path
-"""
 from common import *
 from scandb_mp import *
 import yaml
 import sys
+import argparse
 
 if __name__ == '__main__':
+    # Command line interface
+    parser = argparse.ArgumentParser(description="Create DB for convergence scan (varying number of modes)")
+    parser.add_argument("--yaml", action="store", type=str, required=True)
+    parser.add_argument("--db", action="store", type=str, required=True)
+    parser.add_argument("--nkc-list", nargs="+", type=int)
+    parser.add_argument("--nkc-min", action="store", type=int, required=False)
+    parser.add_argument("--nkc-max", action="store", type=int, required=False)
+    parser.add_argument("--nkc-step", action="store", type=int, required=False)
+
+    args = parser.parse_args()
+
     # Load yaml file
-    stream = open(sys.argv[1], 'r')
+    stream = open(args.yaml, 'r')
     config = yaml.load(stream, Loader=yaml.FullLoader)
 
     # Instantiate DB
-    db = MPScanDB(sys.argv[2], fast_insert=True)
+    db = MPScanDB(args.db, fast_insert=True)
 
     delta_opt = np.pi
     eta_opt = (3.0*np.pi)/2.0
     Rew_opt = np.pi/4.0
 
-    n_kcs = list(range(15,105,5))
+    if args.nkc_list is not None:
+        n_kcs = args.nkc_list
+    else:
+        n_kcs = []
+
+    if None not in set([args.nkc_min, args.nkc_max, args.nkc_step]):
+        n_kcs += list(range(args.nkc_min, args.nkc_max + args.nkc_step, args.nkc_step))
 
     for tag, attrs in config.items():
         desc = attrs["description"]

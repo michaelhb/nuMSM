@@ -1,0 +1,16 @@
+dM_5_62_em5_imw_1_75_cutoff_1e5:
+  description: "Regime C (stiff; dM = 5.62e-05, Imw = 1.75), cutoff = 1e5"
+  heirarchy: 1
+  M: 1.0
+  dM: 5.62e-05
+  Imw: 1.75
+  kc_max: 10
+  cutoff: 1e5
+dM_5_62_em5_imw_1_75_cutoff_1e4:
+  description: "Regime C (stiff; dM = 5.62e-05, Imw = 1.75), cutoff = 1e4"
+  heirarchy: 1
+  M: 1.0
+  dM: 5.62e-05
+  Imw: 1.75
+  kc_max: 10
+  cutoff: 1e4
