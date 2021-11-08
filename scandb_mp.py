@@ -119,10 +119,10 @@ class MPScanDB:
             cutoff = sample.cutoff
 
         c = self.conn.cursor()
-        c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+        c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
             False, hash, sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta,
             sample.tag, sample.description, sample.solvername, sample.n_kc, sample.kc_min, sample.kc_max,
-            sample.quad_scheme, sample.heirarchy, cutoff,
+            sample.quadscheme, sample.heirarchy, cutoff,
             None, None
         ))
         self.conn.commit()
