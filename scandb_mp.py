@@ -93,6 +93,17 @@ class MPScanDB:
         hash = hashlib.sha256(hash_str.encode()).hexdigest()
         return hash
 
+    def hash_exists(self, sample):
+        hash = self.get_hash(sample)
+        c = self.conn.cursor()
+        c.execute('''SELECT * FROM points WHERE hash = ?''', (hash,))
+        res = c.fetchall()
+
+        if len(res) == 0:
+            return False
+        else:
+            return True
+
     def get_bau(self, sample):
         c = self.conn.cursor()
         hash = self.get_hash(sample)
@@ -112,20 +123,23 @@ class MPScanDB:
         """
         hash = self.get_hash(sample)
 
-        # Special handling for null cutoff
-        if sample.cutoff is None:
-            cutoff = -1
-        else:
-            cutoff = sample.cutoff
+        if not self.hash_exists(sample):
+            # Special handling for null cutoff
+            if sample.cutoff is None:
+                cutoff = -1
+            else:
+                cutoff = sample.cutoff
 
-        c = self.conn.cursor()
-        c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
-            False, hash, sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta,
-            sample.tag, sample.description, sample.solvername, sample.n_kc, sample.kc_min, sample.kc_max,
-            sample.quadscheme, sample.heirarchy, cutoff,
-            None, None
-        ))
-        self.conn.commit()
+            c = self.conn.cursor()
+            c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+                False, hash, sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta,
+                sample.tag, sample.description, sample.solvername, sample.n_kc, sample.kc_min, sample.kc_max,
+                sample.quadscheme, sample.heirarchy, cutoff,
+                None, None
+            ))
+            self.conn.commit()
+        else:
+            print("Skipped hash {}".format(hash))
 
     def get_and_lock(self, tag):
         """
