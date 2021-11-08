@@ -56,7 +56,7 @@ if __name__ == "__main__":
     gM_j_nt = lambda T: gM_nt(zT(T, mp.M))[show_mode] * T
 
     # Get tcs from fortran code
-    test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
+    test_data = path.abspath(path.join(path.dirname(__file__), '../../test_data/'))
     path_rates = path.join(test_data,
         "rates/Int_OrgH_MN{}E-1_kc{}E-1.dat".format(int(mp.M * 10), int(kc_list[show_mode] * 10)))
 

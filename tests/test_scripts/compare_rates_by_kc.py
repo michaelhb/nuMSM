@@ -56,7 +56,7 @@ if __name__ == "__main__":
         hP_f = []
         hM_f = []
 
-        test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
+        test_data = path.abspath(path.join(path.dirname(__file__), '../../test_data/'))
         for kc in kc_list:
             path_rates = path.join(test_data,
                 "rates/Int_OrgH_MN{}E-1_kc{}E-1.dat".format(int(mp.M * 10), int(kc * 10)))

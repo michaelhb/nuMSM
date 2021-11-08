@@ -1,0 +1,10 @@
+dM_1em11_imw_0_0_no_cutoff:
+  description: "Regime A (non-stiff; dM = 1e-11, Imw = 0.0), no cutoff"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-11
+  Imw: 0.0
+  kc_min: 0.3
+  kc_max: 10
+  quadscheme: "lobatto"
+  cutoff: null

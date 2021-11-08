@@ -13,7 +13,8 @@ to be run. These are initialised as "empty" entries with bau=NONE, lock=FALSE.
 
 # Extension of ModelParams, adding in solver attributes for scanworker_mp.py
 
-Sample = namedtuple("Sample", ModelParams._fields + ("tag", "description", "solvername", "n_kc", "kc_max", "heirarchy", "cutoff"))
+Sample = namedtuple("Sample", ModelParams._fields + ("tag", "description", "solvername", "n_kc",
+    "kc_min", "kc_max", "quadscheme", "heirarchy", "cutoff"))
 
 class MPScanDB:
 
@@ -61,8 +62,8 @@ class MPScanDB:
         c = self.conn.cursor()
         c.execute('''CREATE TABLE points (
             lock bool, hash text, M real, dM real, Imw real, Rew real, delta real, eta real, 
-            tag string, description string, solvername string, nkc integer, kcmax real, heirarchy integer, cutoff real,
-            time real, bau real)''')
+            tag string, description string, solvername string, nkc integer, kcmin real, kcmax real, quadscheme string, 
+            heirarchy integer, cutoff real, time real, bau real)''')
         self.conn.commit()
 
     def create_solution_table(self):
@@ -85,9 +86,9 @@ class MPScanDB:
             cutoff = sample.cutoff
 
         hash_str = "M: {:.5f}, dM: {:.5e}, Imw: {:.5f}, Rew: {:.5f}, delta: {:.5f}, eta: {:.5f}, tag: {}, " \
-                   "hierarchy: {}, solver_class: {}, n_kc: {}, kc_max: {:.5f}, cutoff: {:.5e}".format(
+                   "hierarchy: {}, solver_class: {}, n_kc: {}, kc_min: {:.5f}, kc_max: {:.5f}, quadscheme: {}, cutoff: {:.5e}".format(
             sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta, sample.tag,
-            sample.heirarchy, sample.solvername, sample.n_kc, sample.kc_max, cutoff
+            sample.heirarchy, sample.solvername, sample.n_kc, sample.kc_min, sample.kc_max, sample.quadscheme, cutoff
         )
         hash = hashlib.sha256(hash_str.encode()).hexdigest()
         return hash
@@ -120,8 +121,8 @@ class MPScanDB:
         c = self.conn.cursor()
         c.execute('''INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
             False, hash, sample.M, sample.dM, sample.Imw, sample.Rew, sample.delta, sample.eta,
-            sample.tag, sample.description, sample.solvername, sample.n_kc, sample.kc_max,
-            sample.heirarchy, cutoff,
+            sample.tag, sample.description, sample.solvername, sample.n_kc, sample.kc_min, sample.kc_max,
+            sample.quad_scheme, sample.heirarchy, cutoff,
             None, None
         ))
         self.conn.commit()
@@ -141,13 +142,12 @@ class MPScanDB:
         if tag is None:
             c.execute('''SELECT 
                             hash, M, dM, Imw, Rew, delta, eta, 
-                            tag, description, solvername, nkc, kcmax, heirarchy, cutoff 
+                            tag, description, solvername, nkc, kcmin, kcmax, quadscheme, heirarchy, cutoff 
                             FROM points WHERE lock = FALSE LIMIT 1''')
         else:
-            print("TAG")
             c.execute('''SELECT 
                             hash, M, dM, Imw, Rew, delta, eta, 
-                            tag, description, solvername, nkc, kcmax, heirarchy, cutoff 
+                            tag, description, solvername, nkc, kcmin, kcmax, quadscheme, heirarchy, cutoff 
                             FROM points WHERE lock = FALSE and tag = ? LIMIT 1''', (tag,))
 
         res = c.fetchall()
@@ -160,7 +160,7 @@ class MPScanDB:
         # Lock the fetched records and build ModelParams
         for r in res:
             hash_, M_, dM_, Imw_, Rew_, delta_, eta_, tag_, description_, \
-                solvername_, n_kc_, kc_max_, heirarchy_, cutoff_ = r
+                solvername_, n_kc_, kc_min_, kc_max_, quadscheme_, heirarchy_, cutoff_ = r
 
             # Special handling for null cutoff
             if cutoff_ == -1:
@@ -169,7 +169,8 @@ class MPScanDB:
             c.execute('''UPDATE points SET lock = TRUE WHERE hash = ?;''', (hash_,))
             sample = Sample(M=M_, dM=dM_, Imw=Imw_, Rew=Rew_, delta=delta_, eta=eta_,
                               tag=tag_, description=description_, solvername=solvername_,
-                              n_kc=n_kc_, kc_max=kc_max_, cutoff=cutoff_, heirarchy=heirarchy_)
+                              n_kc=n_kc_, kc_min=kc_min_, kc_max=kc_max_, quadscheme=quadscheme_,
+                              cutoff=cutoff_, heirarchy=heirarchy_)
 
         self.conn.commit()
 

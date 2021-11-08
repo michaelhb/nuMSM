@@ -15,7 +15,7 @@ if __name__ == "__main__":
     TF = Tsph
     Tlist = np.linspace(TF, T0, 200)
 
-    test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
+    test_data = path.abspath(path.join(path.dirname(__file__), '../../test_data/'))
 
     # rate_names = ["nugp", "nugm", "hnlgp", "hnlgm", "hnlhp", "hnlhm", "hnlh0"]
     rate_names = ["hnldeq"]

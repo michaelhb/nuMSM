@@ -66,7 +66,7 @@ def get_solver(sample):
 
     elif sample.solvername == "QuadratureSolver":
         quadrature = GaussianQuadrature(
-            sample.n_kc, 0.0, sample.kc_max, sample, sample.heirarchy, tot=True, qscheme="legendre")
+            sample.n_kc, sample.kc_min, sample.kc_max, sample, sample.heirarchy, tot=True, qscheme=sample.quadscheme)
         solver = solvers.QuadratureSolver(quadrature,
             model_params=sample, TF=args.t_final, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
             method="Radau", ode_pars=ode_pars, source_term=True)

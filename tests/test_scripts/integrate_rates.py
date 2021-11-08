@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     tc_kc = []
 
-    test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
+    test_data = path.abspath(path.join(path.dirname(__file__), '../../test_data/'))
 
     for kc in kc_list:
         fname = 'rates/Int_ModH_MN10E-1_kc{}E-1.dat'.format(int(kc * 10))

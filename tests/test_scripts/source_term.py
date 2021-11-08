@@ -20,7 +20,7 @@ def Seq(T, mp, smdata):
 if __name__ == "__main__":
 
     ## Seq from old rates
-    rates_dir = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
+    rates_dir = path.abspath(path.join(path.dirname(__file__), '../../test_data/'))
     path_rates = path.join(rates_dir,
                            "rates/Int_OrgH_MN{}E-1_kcAve.dat".format(int(mp.M * 10)))
     path_SMdata = path.join(rates_dir, "standardmodel.dat")
