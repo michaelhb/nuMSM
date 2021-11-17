@@ -18,14 +18,17 @@ Sample = namedtuple("Sample", ModelParams._fields + ("tag", "description", "solv
 
 class MPScanDB:
 
-    def __init__(self, path_, fast_insert=False, save_solutions=False):
+    def __init__(self, path_, fast_insert=False, save_solutions=False, save_densities=False):
         self.conn = self.get_connection(path_)
 
         # Create tables if not present
         if not self.point_table_exists(): self.create_point_table()
 
         if save_solutions and not self.solution_table_exists():
-                self.create_solution_table()
+            self.create_solution_table()
+
+        if save_densities and not self.density_table_exists():
+            self.create_density_table()
 
         # Speedup, maybe?
         if fast_insert:
@@ -73,8 +76,25 @@ class MPScanDB:
 
     def create_density_table(self):
         c = self.conn.cursor()
-        c.execute('''CREATE TABLE densities (hash text, temp real, rp11 real, rp22 real, rpreal real, rpimag real, 
-            rm11 real, rm22 real, rmreal real, rmimag real)''')
+
+        # Create underlying table
+        c.execute('''CREATE TABLE densities (hash text, temp double, kc real, entropy double, rp11 double, rp22 double, rpreal double, rpimag double, 
+            rm11 double, rm22 double, rmreal double, rmimag real)''')
+
+        # Create view in HNL basis
+        c.execute('''
+            CREATE VIEW IF NOT EXISTS densities_hnl AS
+            SELECT
+                temp, kc,
+                (entropy/POW(temp,3))*(rp11 + 0.5*rm11) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn1,
+                (entropy/POW(temp,3))*(rp11 - 0.5*rm11) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn1bar,
+                (entropy/POW(temp,3))*(rp22 + 0.5*rm22) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn2,
+                (entropy/POW(temp,3))*(rp22 - 0.5*rm22) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn2bar,
+                1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS fn
+            FROM
+                densities INNER JOIN points ON densities.hash = points.hash
+            ORDER BY temp DESC, kc ASC;''')
+
         self.conn.commit()
 
     def get_hash(self, sample):
@@ -214,13 +234,13 @@ class MPScanDB:
 
     def save_densities(self, sample, densities):
         """
-        densities should be a list of (T, kc, <8 real components>) tuples
+        densities should be a list of (T, kc, entropy, <8 real components>) tuples
         """
         hash = self.get_hash(sample)
         c = self.conn.cursor()
 
         for d in densities:
-            c.execute('''INSERT INTO densities VALUES (?,?,?,?,?,?,?,?,?,?,?)''',(hash, *d))
+            c.execute('''INSERT INTO densities VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',(hash, *d))
 
         self.conn.commit()
 

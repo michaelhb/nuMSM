@@ -7,6 +7,8 @@ from quadrature import GaussianQuadrature
 from scandb_mp import *
 from mpi4py import MPI
 import argparse
+from collections import namedtuple
+import traceback
 
 # Ensure numpy, scipy, etc don't spawn extra threads
 from os import environ
@@ -37,8 +39,8 @@ parser.add_argument("--output-db", action="store", type=str, required=True)
 parser.add_argument("--tag", action="store", type=str, default=None)
 parser.add_argument("--save-solutions", action="store_true", default=False)
 parser.add_argument("--save-densities", action="store_true", default=False)
-parser.add_argument("--ode-atol", action="store", type=float, default=1e-20)
-parser.add_argument("--ode-rtol", action="store", type=float, default=1e-4)
+parser.add_argument("--ode-atol", action="store", type=float, default=1e-15)
+parser.add_argument("--ode-rtol", action="store", type=float, default=1e-6)
 parser.add_argument("--t-final", action="store", type=float, default=Tsph)
 
 args = parser.parse_args()
@@ -85,7 +87,7 @@ n_finished = 0
 
 if rank == 0: # sample dispatcher / result recorder
     # Instantiate DB connection
-    db = MPScanDB(db_path, fast_insert=True, save_solutions=save_solutions)
+    db = MPScanDB(db_path, fast_insert=True, save_solutions=save_solutions, save_densities=save_densities)
 
     # Purge any hung samples
     db.purge_hung_samples()
@@ -123,20 +125,14 @@ if rank == 0: # sample dispatcher / result recorder
 
         # Message type 2: return of result
         else:
-            if save_solutions:
-                sample, bau, proc_time, worker_rank, solution_bau = message
-            else:
-                sample, bau, proc_time, worker_rank = message
-
+            ret = message[1]
             logging.info("proc 0: got results from worker {}, writing to DB".format(worker_rank))
-            start_wait = time.time()
-            db.save_result(sample, bau, proc_time)
+            db.save_result(ret["sample"], ret["bau"], ret["proc_time"])
 
             if save_solutions:
-                db.save_solution(sample, solution_bau)
-
-            end_wait = time.time()
-            logging.info("db write took {}s".format(end_wait - start_wait))
+                db.save_solution(ret["sample"], ret["solution_bau"])
+            if save_densities:
+                db.save_densities(ret["sample"], ret["solution_densities"])
 
 else: # worker process
     while True:
@@ -171,17 +167,30 @@ else: # worker process
                 # Send result back to process 0
                 logging.info("worker {}: sending results to proc 0".format(rank))
 
+                solution_bau = None
+                solution_densities = None
+
                 if save_solutions:
                     Tlist = solver.get_Tlist()
                     baus = solver.get_total_lepton_asymmetry()
                     solution_bau = list(zip(Tlist, baus))
-                    comm.send((sample, bau, time_sol, rank, solution_bau), dest=0)
-                else:
-                    comm.send((sample, bau, time_sol, rank), dest=0)
+
+                if save_densities:
+                    solution_densities = solver.get_densities()
+
+                return_message = {
+                    'sample' : sample, 'bau' : bau, 'proc_time' : time_sol,
+                    'solution_bau' : solution_bau, 'solution_densities' : solution_densities
+                }
+
+                comm.send(("return_result", return_message), dest=0)
 
             except Exception as e:
+                tb1 = traceback.TracebackException.from_exception(e)
+                print(''.join(tb1.format()))
                 print("point failed: {}".format(sample))
                 print(e)
+
 
 
 

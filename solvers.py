@@ -96,14 +96,6 @@ class Solver(ABC):
         plt.title("Total lepton number")
         plt.show()
 
-    # def plot_L_violation(self, title=None):
-    #     Tlist = self.get_Tlist()
-    #     plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry + self._total_lepton_asymmetry))
-    #     plt.xlabel("T")
-    #     plt.ylabel("L violation")
-    #     plt.title(title)
-    #     plt.show()
-
     def plot_everything(self):
         plt.clf()
         X = self.get_Tlist()
@@ -494,7 +486,6 @@ class QuadratureSolver(Solver):
                 [np.zeros((3,3)), np.zeros((3,8*n_kc))],
                 [np.zeros((8*n_kc,3)), block_diag(*diag_H0)]
             ]))
-            K = 1.5
             cutoff = K*np.abs(jac*sparse_eig(block_diag(*diag_H0), k=1, which="LM", return_eigenvectors=False)[0])
             return np.dot(jac*res, np.linalg.inv(-jac*Aprime / cutoff + np.eye(3 + 8 * n_kc)))
         elif self.fixed_cutoff is not None:
@@ -574,3 +565,15 @@ class QuadratureSolver(Solver):
             self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol.y.T, zlist)
             self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, zlist)
             self._full_solution = sol.y.T
+
+    def get_densities(self):
+        densities = []
+
+        for i_T, T in enumerate(self.get_Tlist()):
+            for i_kc, kc in enumerate(self.kc_list):
+                ix_start = 3 + 8*i_kc
+                density = [T, kc, self.smdata.s(T).tolist()]
+                density += self._full_solution[i_T][ix_start : ix_start + 8].tolist()
+                densities.append(density)
+
+        return densities

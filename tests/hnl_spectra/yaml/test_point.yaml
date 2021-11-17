@@ -1,0 +1,12 @@
+test_quad_defaults:
+  description: "Test cube (M=1.0,dM=1e-9,Imw=5.0)"
+  heirarchy: 1
+  M: 1.0
+  dM: 1e-9
+  Imw: 5.0
+  n_kc: 10
+  kc_min: 0
+  kc_max: 10
+  cutoff:
+  quadscheme: "legendre"
+
