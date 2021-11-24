@@ -60,6 +60,7 @@ class MPScanDB:
     def density_table_exists(self):
         c = self.conn.cursor()
         c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='densities' ''')
+        return c.fetchone()[0] == 1
 
     def create_point_table(self):
         c = self.conn.cursor()
@@ -82,15 +83,17 @@ class MPScanDB:
             rm11 double, rm22 double, rmreal double, rmimag real)''')
 
         # Create view in HNL basis
+        # Getting around stupid Mathematica bug (no support for POW function!)
         c.execute('''
             CREATE VIEW IF NOT EXISTS densities_hnl AS
             SELECT
-                temp, kc,
-                (entropy/POW(temp,3))*(rp11 + 0.5*rm11) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn1,
-                (entropy/POW(temp,3))*(rp11 - 0.5*rm11) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn1bar,
-                (entropy/POW(temp,3))*(rp22 + 0.5*rm22) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn2,
-                (entropy/POW(temp,3))*(rp22 - 0.5*rm22) + 1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS dn2bar,
-                1.0/(EXP((SQRT(POW(M,2) + POW(temp*kc,2))/temp)) + 1.0) AS fn
+                points.hash, temp, kc,
+                (entropy/(temp*temp*temp))*(rp11 + 0.5*rm11) + 1.0/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn1,
+                (entropy/(temp*temp*temp))*(rp11 - 0.5*rm11) + 1.0/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn1bar,
+                (entropy/(temp*temp*temp))*(rp22 + 0.5*rm22) + 1.0/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn2,
+                (entropy/(temp*temp*temp))*(rp22 - 0.5*rm22) + 1.0/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn2bar,
+                1.0/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS fn1,
+                1.0/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) as fn2
             FROM
                 densities INNER JOIN points ON densities.hash = points.hash
             ORDER BY temp DESC, kc ASC;''')

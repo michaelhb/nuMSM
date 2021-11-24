@@ -240,6 +240,7 @@ class AveragedSolver(Solver):
         s = self.smdata.s(self.T0)
 
         n_plus0 = -np.identity(2)*neq/s
+        # n_plus0 = -np.identity(2) * neq / s
         # n_plus0 = -((self.T0**3)*np.identity(2) * neq) / s
         r_plus0 = np.einsum('kij,ji->k',tau,n_plus0)
 
@@ -386,6 +387,7 @@ class QuadratureSolver(Solver):
 
         for kc in self.kc_list:
             rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
+            # rho_plus_0 = (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
             # rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)

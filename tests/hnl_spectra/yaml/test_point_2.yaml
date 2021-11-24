@@ -4,9 +4,8 @@ test_quad_defaults:
   M: 1.0
   dM: 1e-9
   Imw: 5.0
-  n_kc: 30
+  n_kc: 50
   kc_min: 0.3
   kc_max: 15
   cutoff:
   quadscheme: "lobatto"
-
