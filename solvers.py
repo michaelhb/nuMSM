@@ -1,17 +1,14 @@
 from abc import ABC, abstractmethod
+from os import path
 
-import numpy as np
-from scipy.integrate import odeint, solve_ivp
 import matplotlib as mpl
-import matplotlib.pyplot as plt
+from scipy import integrate
+from scipy.integrate import odeint, solve_ivp
+from scipy.linalg import block_diag
+from scipy.sparse.linalg import eigs as sparse_eig
+
 from common import *
 from load_precomputed import *
-from os import path
-from scipy.linalg import block_diag
-from scipy.linalg import eig as speig
-from scipy.sparse.linalg import eigs as sparse_eig
-from scipy import integrate
-import time
 
 # ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
 ode_par_defaults = {}
@@ -20,17 +17,15 @@ mpl.rcParams['figure.dpi'] = 300
 class Solver(ABC):
 
     def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
-                 ode_pars = ode_par_defaults, method=None, source_term=True):
+                 ode_pars = ode_par_defaults, method="Radau", source_term=True):
+
         self.TF = TF
         self.mp = model_params
-
         self.T0 = get_T0(self.mp)
 
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None
 
-        self._eigenvalues = []
-        self._Tlist_eigvals = []
         self.H = H
         self.ode_pars = ode_pars
         self.eig_cutoff = eig_cutoff
@@ -44,7 +39,7 @@ class Solver(ABC):
         super().__init__()
 
     @abstractmethod
-    def solve(self, eigvals=False):
+    def solve(self):
         """
         Solve the kinetic equations
         :param TF: Lower temperature bound
@@ -54,105 +49,6 @@ class Solver(ABC):
 
     def get_full_solution(self):
         return self._full_solution
-
-    def plot_total_lepton_asymmetry(self, title=None):
-        Tlist = self.get_Tlist()
-        plt.loglog(Tlist, np.abs(self._total_lepton_asymmetry))
-        plt.xlabel("T")
-        plt.ylabel("lepton asymmetry")
-        plt.title(title, fontsize=10)
-        plt.tight_layout()
-        plt.show()
-
-    def plot_total_hnl_asymmetry(self, title=None):
-        Tlist = self.get_Tlist()
-        plt.loglog(Tlist, np.abs(self._total_hnl_asymmetry))
-        plt.xlabel("T")
-        plt.ylabel("hnl asymmetry")
-        plt.title(title, fontsize=10)
-        plt.tight_layout()
-        plt.show()
-
-    # quick dirty check
-    def print_L_violation(self):
-        lv = []
-
-        for i, T in enumerate(self.get_Tlist()):
-            lv.append(self.smdata.s(T)*(self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
-
-        print(lv)
-
-    def plot_total_L(self):
-        lv = []
-
-        for i, T in enumerate(self.get_Tlist()):
-            lv.append(self.smdata.s(T)*(self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
-
-        plt.plot(self.get_Tlist(), lv)
-        plt.xlabel("T")
-        plt.ylabel("L(T)")
-        plt.title("Total lepton number")
-        plt.show()
-
-    def plot_everything(self):
-        plt.clf()
-        X = self.get_Tlist()
-        Y = self.get_full_solution()
-
-        Y_delta_n = [Y[:, 0], Y[:, 1], Y[:, 2]]
-        Y_kc_real_p = []
-        Y_kc_real_m = []
-        Y_kc_imag_p = []
-        Y_kc_imag_m = []
-
-        for j, kc in enumerate(self.kc_list):
-            base_col = 3 + 8 * j
-            Y_kc_real_p.append(Y[:, base_col])
-            Y_kc_real_p.append(Y[:, base_col + 1])
-            Y_kc_imag_p.append(Y[:, base_col + 2])
-            Y_kc_imag_p.append(Y[:, base_col + 3])
-            Y_kc_real_m.append(Y[:, base_col + 4])
-            Y_kc_real_m.append(Y[:, base_col + 5])
-            Y_kc_imag_m.append(Y[:, base_col + 6])
-            Y_kc_imag_m.append(Y[:, base_col + 7])
-
-        plt.loglog(X, np.abs(Y_kc_real_p).T, color="blue", label="kc_real")
-        plt.loglog(X, np.abs(Y_kc_real_m).T, color="blue", label="kc_real", linestyle="-.")
-        plt.loglog(X, np.abs(Y_kc_imag_p).T, color="red", label="kc_imag")
-        plt.loglog(X, np.abs(Y_kc_imag_m).T, color="red", label="kc_imag", linestyle="-.")
-        plt.loglog(X, np.abs(Y_delta_n).T, color="green", label="delta_n")
-
-        plt.xlabel("T")
-        plt.ylabel("everything")
-        plt.title("everything!")
-        plt.show()
-
-    def plot_eigenvalues(self, title=None, use_z=False):
-        plt.clf()
-        X = self._Tlist_eigvals
-
-        if use_z:
-            X = zT(np.array(X), self.mp.M)
-
-        n_eig = len(self._eigenvalues[0])
-
-        plt.xlabel("T")
-        plt.ylabel("Eigenvalues")
-        if title:
-            plt.title(title)
-
-        for i in range(n_eig):
-            y = []
-            for j in range(len(X)):
-                y.append(np.abs(self._eigenvalues[j][i]))
-
-            if use_z:
-                plt.scatter(X, y, '.')#, markersize=1)
-            else:
-                plt.loglog(X, y, '.', markersize=1)
-
-        if use_z: plt.set_yscale("log")
-        plt.show()
 
     def get_final_lepton_asymmetry(self):
         return self._total_lepton_asymmetry[-1]
@@ -182,9 +78,7 @@ class AveragedSolver(Solver):
         self.susc = get_susceptibility_matrix(path_suscept_data)
         self.smdata = get_sm_data(path_SMdata)
 
-        self._eigenvalues = []
-
-    def solve(self, eigvals=False):
+    def solve(self):
 
         # Get initial conditions
         initial_state = self.get_initial_state()
@@ -200,11 +94,6 @@ class AveragedSolver(Solver):
         def f_state(z, x):
             sysmat = self.coefficient_matrix(z)
             jac = jacobian(z, self.mp, self.smdata)
-
-            if eigvals:
-                eig = speig((jac*sysmat), right=False, left=True)
-                self._eigenvalues.append(eig[0])
-                self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
             if self.use_source_term:
                 res = (np.dot(sysmat, x) - self.source_term(z))
@@ -309,9 +198,6 @@ class AveragedSolver(Solver):
         T = Tz(z, self.mp.M)
         GB_nu_a, GBt_nu_a, GBt_N_a, HB_N, HB_I,  GB_N, Seq = [R(z) for R in self.rates]
 
-        ### Account for expanding universe ###
-        #GBt_nu_a /= T**3
-
         jac = jacobian(z, self.mp, self.smdata)
 
         HB_0 = HB_N - HB_I
@@ -395,8 +281,6 @@ class QuadratureSolver(Solver):
 
         for kc in self.kc_list:
             rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
-            # rho_plus_0 = (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2) / self.smdata.s(self.T0)
-            # rho_plus_0 = -1 * (self.T0 ** 3) * f_N(self.T0, self.mp.M, kc) * np.identity(2)
             r_plus_0 = np.einsum('kij,ji->k', tau, rho_plus_0)
             x0.extend(r_plus_0)
             x0.extend([0, 0, 0, 0])
@@ -481,7 +365,7 @@ class QuadratureSolver(Solver):
             diag_HI.append(np.block([[b11_HI, b12_HI], [b21_HI, b11_HI]]))
 
             # Everything else
-            b11_H0 = -1j*Ch(np.real(H_0)) #- (3*(T**2)/MpStar(z, self.mp, self.smdata))*np.identity(4)
+            b11_H0 = -1j*Ch(np.real(H_0))
             b12_H0 = 0.5*Ch(np.imag(H_0))
             b21_H0 = 2*Ch(np.imag(H_0))
             diag_H0.append(np.block([[b11_H0, b12_H0], [b21_H0, b11_H0]]))
@@ -534,7 +418,7 @@ class QuadratureSolver(Solver):
 
         return np.array(res)
 
-    def solve(self, eigvals=False):
+    def solve(self):
         initial_state = self.get_initial_state()
 
         # Integration bounds
@@ -542,17 +426,12 @@ class QuadratureSolver(Solver):
         zF = zT(self.TF, self.mp.M)
 
         # Output grid
-        zlist = np.linspace(z0, zF, 200)
+        zlist = [zT(T) for T in self.get_Tlist()]
 
         # Construct system of equations
         def f_state(z, x):
             sysmat = self.coefficient_matrix(z)
             res = (sysmat.dot(x))
-
-            if eigvals:
-                eig = speig((sysmat), right=False, left=True)
-                self._eigenvalues.append(eig[0])
-                self._Tlist_eigvals.append(Tz(z, self.mp.M))
 
             if self.use_source_term:
                 return res + self.source_term(z)
