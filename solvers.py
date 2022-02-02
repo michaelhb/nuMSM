@@ -10,11 +10,37 @@ from scipy.sparse.linalg import eigs as sparse_eig
 from common import *
 from load_precomputed import *
 
-# ode_par_defaults = {'rtol' : 1e-6, 'atol' : 1e-15}
 ode_par_defaults = {}
 mpl.rcParams['figure.dpi'] = 300
 
-class Solver(ABC):
+def SolverInterface(ABC):
+
+    @abstractmethod
+    def solve(self):
+        """
+        Solve the kinetic equations
+        :param TF: Lower temperature bound
+        :return: None
+        """
+        pass
+
+    @abstractmethod
+    def get_full_solution(self):
+        pass
+
+    @abstractmethod
+    def get_final_lepton_asymmetry(self):
+        pass
+
+    @abstractmethod
+    def get_total_lepton_asymmetry(self):
+        pass
+
+    @abstractmethod
+    def get_Tlist(self):
+        pass
+
+class Solver(SolverInterface):
 
     def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
                  ode_pars = ode_par_defaults, method="Radau", source_term=True):
