@@ -288,12 +288,15 @@ class AveragedSolver(Solver):
 
 class QuadratureSolver(Solver):
 
-    def __init__(self, quadrature, **kwargs):
+    def __init__(self, rates_interface, quadrature, **kwargs):
         Solver.__init__(self, **kwargs)
 
         self.kc_list = quadrature.kc_list()
-        self.rates = quadrature.rates()
         self.weights = quadrature.weights()
+
+        self.rates = []
+        for kc in self.kc_list:
+            self.rates.append(rates_interface.get_rates(kc))
 
         test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
 

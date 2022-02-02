@@ -162,7 +162,7 @@ class Rates_Fortran(Rates_Interface):
 
 class Rates_Jurai(Rates_Interface):
 
-    def __init__(self, mp, H, kc_list, tot=True):
+    def __init__(self, mp, H, kc_list, tot=False):
         self.mp = mp
         self.H = H
         self.kc_list = kc_list

@@ -6,6 +6,7 @@ import quadpy as qp
 
 class Quadrature(ABC):
 
+    @abstractmethod
     def kc_list(self):
         pass
 
@@ -13,9 +14,9 @@ class Quadrature(ABC):
     def weights(self):
         pass
 
-    @abstractmethod
-    def rates(self):
-        pass
+    # @abstractmethod
+    # def rates(self):
+    #     pass
 
 class TrapezoidalQuadrature(Quadrature):
 
@@ -327,7 +328,7 @@ class GaussFermiDiracQuadrature(Quadrature):
 
 class GaussianQuadrature(Quadrature):
 
-    def __init__(self, n_points, kc_min, kc_max, mp, H, tot=True, qscheme="legendre"):
+    def __init__(self, n_points, kc_min, kc_max, mp, H, qscheme="legendre"):
 
         if qscheme == "legendre":
             gq = qp.c1.gauss_legendre(n_points)
@@ -346,11 +347,11 @@ class GaussianQuadrature(Quadrature):
             gq_points
         )))
 
-        rates_interface = Rates_Jurai(mp, H, self._kc_list, tot)
-
-        self._rates = []
-        for kc in self._kc_list:
-            self._rates.append(rates_interface.get_rates(kc))
+        # rates_interface = Rates_Jurai(mp, H, self._kc_list, tot)
+        #
+        # self._rates = []
+        # for kc in self._kc_list:
+        #     self._rates.append(rates_interface.get_rates(kc))
 
     def kc_list(self):
         return self._kc_list
@@ -358,5 +359,5 @@ class GaussianQuadrature(Quadrature):
     def weights(self):
         return self._weights
 
-    def rates(self):
-        return self._rates
+    # def rates(self):
+    #     return self._rates
