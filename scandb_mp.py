@@ -1,9 +1,7 @@
 import sqlite3
 import hashlib
-import sys
-from os import path
 # import fasteners
-from common import *
+from nuMSM_solver.common import *
 from collections import namedtuple
 
 """

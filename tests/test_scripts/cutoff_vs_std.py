@@ -1,4 +1,4 @@
-from solvers import *
+from nuMSM_solver.solvers import *
 import time
 
 if __name__ == '__main__':

@@ -1,10 +1,7 @@
-from common import *
-from os import path
-from scipy.interpolate import interp1d
+from nuMSM_solver.common import *
 import matplotlib.pyplot as plt
-from leptotools.momentumDep import interpHFast, interpFast
 from rates import Rates_Fortran, Rates_Jurai
-from solvers import *
+from nuMSM_solver.solvers import *
 
 
 

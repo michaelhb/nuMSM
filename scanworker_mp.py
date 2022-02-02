@@ -1,13 +1,10 @@
-from common import *
-import sys
-import solvers
+from nuMSM_solver import solvers
 import time
 from rates import Rates_Jurai
 from quadrature import GaussianQuadrature
 from scandb_mp import *
 from mpi4py import MPI
 import argparse
-from collections import namedtuple
 import traceback
 
 # Ensure numpy, scipy, etc don't spawn extra threads
@@ -66,8 +63,8 @@ def get_solver(sample):
         quadrature = GaussianQuadrature(
             sample.n_kc, sample.kc_min, sample.kc_max, sample, sample.heirarchy, tot=True, qscheme=sample.quadscheme)
         solver = solvers.QuadratureSolver(quadrature,
-            model_params=sample, TF=args.t_final, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
-            method="Radau", ode_pars=ode_pars, source_term=True)
+                                          model_params=sample, TF=args.t_final, H=sample.heirarchy, fixed_cutoff=sample.cutoff, eig_cutoff=False,
+                                          method="Radau", ode_pars=ode_pars, source_term=True)
     else:
         raise Exception("Unknown solver class!")
 

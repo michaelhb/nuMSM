@@ -1,9 +1,7 @@
-from solvers import *
+from nuMSM_solver.solvers import *
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-import matplotlib.colors as colors
-import matplotlib.cm as cm
 
 mp = ModelParams(
     M=1.0,

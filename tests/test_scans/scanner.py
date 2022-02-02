@@ -1,6 +1,6 @@
-from common import *
-from solvers import *
-from rates import Rates_Jurai, Rates_Fortran
+from nuMSM_solver.common import *
+from nuMSM_solver.solvers import *
+from rates import Rates_Jurai
 from quadrature import GaussianQuadrature
 from scandb import *
 

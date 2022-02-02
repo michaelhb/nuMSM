@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
-from common import TDependentRateCoeffs, SMData
+from nuMSM_solver.common import TDependentRateCoeffs, SMData
 
 def get_rate_coefficients(path):
     '''

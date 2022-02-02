@@ -1,4 +1,4 @@
-from common import *
+from nuMSM_solver.common import *
 import random
 
 def random(fixed_params, ranges, num_samples, seed):

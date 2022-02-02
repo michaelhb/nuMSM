@@ -1,7 +1,5 @@
-from common import *
 from scandb_mp import *
 import yaml
-import sys
 import argparse
 
 if __name__ == '__main__':

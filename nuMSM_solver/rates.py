@@ -1,10 +1,10 @@
-import common
+from nuMSM_solver.common import *
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from functools import lru_cache
 from scipy.interpolate import interp1d
 import numpy as np
-from yukawasCI import FM
+from nuMSM_solver.yukawasCI import FM
 from os import path
 
 from leptotools.momentumDep import interpHFast, interpFast
@@ -77,34 +77,30 @@ def rates_from_tc(tc, mp, H):
         [h[a, 0] * hc[a, 0] + h[a, 1] * hc[a, 1]
          for a in range(3)])
 
-    def Tz(z):
-        # return mp.M*np.exp(-z)
-        return common.Tz(z, mp.M)
-
     # Construct the integrated rate functions
     def Gamma_nu_a(z):
-        return np.array([hhc[a] * (tc.nugp(Tz(z)) + tc.nugm(Tz(z))) for a in range(3)])
+        return np.array([hhc[a] * (tc.nugp(Tz(z, mp.M)) + tc.nugm(Tz(z, mp.M))) for a in range(3)])
 
     def GammaTilde_nu_a(z):
-        res = np.array([-tc.hnlgp(Tz(z)) * YNplus[a].T + tc.hnlgm(Tz(z)) * YNminus[a].T for a in range(3)])
+        res = np.array([-tc.hnlgp(Tz(z, mp.M)) * YNplus[a].T + tc.hnlgm(Tz(z, mp.M)) * YNminus[a].T for a in range(3)])
         return res
 
     def Hamiltonian_N(z):
-        return mp.dM * np.array([[0, 1], [1, 0]]) * tc.hnlh0(Tz(z)) \
-               + tc.hnlhp(Tz(z)) * np.sum(YNplus, axis=0) \
-               + tc.hnlhm(Tz(z)) * np.sum(YNminus, axis=0)
+        return mp.dM * np.array([[0, 1], [1, 0]]) * tc.hnlh0(Tz(z, mp.M)) \
+               + tc.hnlhp(Tz(z, mp.M)) * np.sum(YNplus, axis=0) \
+               + tc.hnlhm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
 
     def Gamma_N(z):
-        return tc.hnlgp(Tz(z)) * np.sum(YNplus, axis=0) + tc.hnlgm(Tz(z)) * np.sum(YNminus, axis=0)
+        return tc.hnlgp(Tz(z, mp.M)) * np.sum(YNplus, axis=0) + tc.hnlgm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
 
     def GammaTilde_N_a(z):
-        return np.array([-tc.nugp(Tz(z)) * YNplus[a] + tc.nugm(Tz(z)) * YNminus[a] for a in range(3)])
+        return np.array([-tc.nugp(Tz(z, mp.M)) * YNplus[a] + tc.nugm(Tz(z, mp.M)) * YNminus[a] for a in range(3)])
 
     def Seq(z):
-        return tc.hnldeq(Tz(z)) * np.identity(2)
+        return tc.hnldeq(Tz(z, mp.M)) * np.identity(2)
 
     def Hamiltonian_N_Int(z):
-        return tc.hnlhp(Tz(z)) * np.sum(YNplus, axis=0) + tc.hnlhm(Tz(z)) * np.sum(YNminus, axis=0)
+        return tc.hnlhp(Tz(z, mp.M)) * np.sum(YNplus, axis=0) + tc.hnlhm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
 
     return Rates(
         Gamma_nu_a,
@@ -131,7 +127,7 @@ class Rates_Fortran(Rates_Interface):
     def __init__(self, mp, H):
         self.mp = mp
         self.H = H
-        self.rates_dir = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
+        self.rates_dir = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
 
     @lru_cache(maxsize=None)
     def get_averaged_rates(self):
@@ -175,10 +171,10 @@ class Rates_Jurai(Rates_Interface):
         hP_, hM_ = interpHFast(mp.M, kc_list)
 
         # We will need caching to retain the efficiency boost from 2D interpolation
-        self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(common.zT(T, mp.M)))
-        self.gM_all = lru_cache(maxsize=None)(lambda T: gM_(common.zT(T, mp.M)))
-        self.hP_all = lru_cache(maxsize=None)(lambda T: hP_(common.zT(T, mp.M)))
-        self.hM_all = lru_cache(maxsize=None)(lambda T: hM_(common.zT(T, mp.M)))
+        self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(zT(T, mp.M)))
+        self.gM_all = lru_cache(maxsize=None)(lambda T: gM_(zT(T, mp.M)))
+        self.hP_all = lru_cache(maxsize=None)(lambda T: hP_(zT(T, mp.M)))
+        self.hM_all = lru_cache(maxsize=None)(lambda T: hM_(zT(T, mp.M)))
 
     @lru_cache(maxsize=None)
     def get_averaged_rates(self):
@@ -196,15 +192,15 @@ class Rates_Jurai(Rates_Interface):
         ls.set_xi(1)
         ls.set_CI()
 
-        nugp = lambda T: ls.gammanuP(common.zT(T, self.mp.M)) * T
-        nugm = lambda T: ls.gammanuM(common.zT(T, self.mp.M)) * T
+        nugp = lambda T: ls.gammanuP(zT(T, self.mp.M)) * T
+        nugm = lambda T: ls.gammanuM(zT(T, self.mp.M)) * T
         # nugm = lambda T: 0
-        hnlgp = lambda T: ls.gammaNP(common.zT(T, self.mp.M)) * T
-        hnlgm = lambda T: ls.gammaNM(common.zT(T, self.mp.M)) * T
+        hnlgp = lambda T: ls.gammaNP(zT(T, self.mp.M)) * T
+        hnlgm = lambda T: ls.gammaNM(zT(T, self.mp.M)) * T
         # hnlgm = lambda T: 0
-        hnlhp = lambda T: ls.hNP(common.zT(T, self.mp.M)) * T
-        hnlhm = lambda T: ls.hNM(common.zT(T, self.mp.M)) * T
-        hnlh0 = lambda T: ls.hNM0(common.zT(T, self.mp.M)) * T
+        hnlhp = lambda T: ls.hNP(zT(T, self.mp.M)) * T
+        hnlhm = lambda T: ls.hNM(zT(T, self.mp.M)) * T
+        hnlh0 = lambda T: ls.hNM0(zT(T, self.mp.M)) * T
         hnldeq = lambda T: 0 #TODO!
 
         tc = TDependentRateCoeffs(

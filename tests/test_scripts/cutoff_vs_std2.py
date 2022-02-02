@@ -2,7 +2,7 @@ from os import path, environ
 environ["MKL_NUM_THREADS"] = "1"
 environ["NUMEXPR_NUM_THREADS"] = "1"
 environ["OMP_NUM_THREADS"] = "1"
-from solvers import *
+from nuMSM_solver.solvers import *
 import time
 from multiprocessing import Pool
 from collections import namedtuple

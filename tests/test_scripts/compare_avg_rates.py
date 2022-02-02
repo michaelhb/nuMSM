@@ -1,9 +1,8 @@
 from load_precomputed import get_rate_coefficients, get_sm_data
-from common import *
+from nuMSM_solver.common import *
 import numpy as np
 import matplotlib.pyplot as plt
 from os import path
-import sys
 from leptotools.scantools import leptogenesisScanSetup
 
 mp = ModelParams(M=10.0, dM=1e-12, Imw=3.0, Rew=0.7853981633974483, delta=3.141592653589793, eta=4.71238898038469)

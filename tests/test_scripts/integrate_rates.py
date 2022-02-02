@@ -3,7 +3,7 @@ Quick and dirty sanity check
 """
 
 from load_precomputed import get_rate_coefficients
-from common import zeta3
+from nuMSM_solver.common import zeta3
 import numpy as np
 import matplotlib.pyplot as plt
 from os import path

@@ -1,6 +1,4 @@
-from common import *
 from scandb_mp import *
-import yaml
 import sys
 
 """

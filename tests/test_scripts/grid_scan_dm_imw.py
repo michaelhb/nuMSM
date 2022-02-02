@@ -6,7 +6,7 @@ environ["NUMEXPR_NUM_THREADS"] = "1"
 environ["OMP_NUM_THREADS"] = "1"
 environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
                            "intra_op_parallelism_threads=1")
-from solvers import *
+from nuMSM_solver.solvers import *
 from multiprocessing import Pool
 from quadrature import GaussianQuadrature
 from scandb import ScanDB

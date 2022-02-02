@@ -1,4 +1,4 @@
-from solvers import *
+from nuMSM_solver.solvers import *
 import matplotlib.pyplot as plt
 
 mp = ModelParams(

@@ -1,4 +1,4 @@
-from common import *
+from nuMSM_solver.common import *
 from os import path
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt

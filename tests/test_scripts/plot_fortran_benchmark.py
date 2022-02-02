@@ -1,9 +1,7 @@
-import numpy as np
-from os.path import expanduser
 from os.path import dirname, abspath, join
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-from common import *
+from nuMSM_solver.common import *
 
 if __name__ == '__main__':
     # path_benchmark = expanduser("~/SciCodes/nuMSM/test_data/LA_Evo_ModH.dat")

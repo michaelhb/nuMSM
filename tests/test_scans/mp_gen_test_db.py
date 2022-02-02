@@ -1,4 +1,4 @@
-from common import *
+from nuMSM_solver.common import *
 from os import path
 from scandb_mp import MPScanDB
 

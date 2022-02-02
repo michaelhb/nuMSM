@@ -1,4 +1,4 @@
-from solvers import *
+from nuMSM_solver.solvers import *
 from plots import lepton_asymmetry_comp
 
 if __name__ == '__main__':

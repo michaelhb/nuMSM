@@ -1,5 +1,5 @@
 from scanner import scan
-from common import *
+from nuMSM_solver.common import *
 from os import path
 import numpy as np
 

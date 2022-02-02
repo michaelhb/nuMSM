@@ -1,7 +1,6 @@
 """
 Args: yaml file, output db path
 """
-from common import *
 from scandb_mp import *
 import yaml
 import sys

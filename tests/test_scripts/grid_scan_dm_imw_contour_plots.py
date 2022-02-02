@@ -1,7 +1,7 @@
 from scandb import ScanDB
 from sys import argv
 import yaml
-from common import *
+from nuMSM_solver.common import *
 from plots import *
 
 def get_scan_points(points_per_dim, M, delta, eta, Rew, dM_min, dM_max):

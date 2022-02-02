@@ -1,9 +1,6 @@
-import generate_samples
-from scanner import scan
-from common import *
-from os import path
-from solvers import *
-from rates import Rates_Jurai, Rates_Fortran
+from nuMSM_solver.common import *
+from nuMSM_solver.solvers import *
+from rates import Rates_Fortran
 import numpy as np
 from scipy.optimize import differential_evolution
 from quadrature import GaussianQuadrature

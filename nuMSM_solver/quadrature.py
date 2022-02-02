@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from rates import Rates_Jurai
-from common import f_nu
+from nuMSM_solver.rates import Rates_Jurai
+from nuMSM_solver.common import f_nu
 import quadpy as qp
 
 class Quadrature(ABC):

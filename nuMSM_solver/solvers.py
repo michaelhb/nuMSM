@@ -7,13 +7,14 @@ from scipy.integrate import odeint, solve_ivp
 from scipy.linalg import block_diag
 from scipy.sparse.linalg import eigs as sparse_eig
 
-from common import *
-from load_precomputed import *
+from nuMSM_solver.common import *
+from nuMSM_solver.load_precomputed import *
 
 ode_par_defaults = {}
 mpl.rcParams['figure.dpi'] = 300
 
-def SolverInterface(ABC):
+
+class SolverInterface(ABC):
 
     @abstractmethod
     def solve(self):
@@ -39,6 +40,7 @@ def SolverInterface(ABC):
     @abstractmethod
     def get_Tlist(self):
         pass
+
 
 class Solver(SolverInterface):
 
@@ -98,7 +100,7 @@ class AveragedSolver(Solver):
         self.rates = rates_interface.get_averaged_rates()
 
         # Load standard model data
-        test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
+        test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
         path_SMdata = path.join(test_data, "standardmodel.dat")
         path_suscept_data = path.join(test_data, "susceptibility.dat")
         self.susc = get_susceptibility_matrix(path_suscept_data)
@@ -293,7 +295,7 @@ class QuadratureSolver(Solver):
         self.rates = quadrature.rates()
         self.weights = quadrature.weights()
 
-        test_data = path.abspath(path.join(path.dirname(__file__), 'test_data/'))
+        test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
 
         # Load standard model data, susceptibility matrix
         path_SMdata = path.join(test_data, "standardmodel.dat")
@@ -452,7 +454,7 @@ class QuadratureSolver(Solver):
         zF = zT(self.TF, self.mp.M)
 
         # Output grid
-        zlist = [zT(T) for T in self.get_Tlist()]
+        zlist = [zT(T, self.mp.M) for T in self.get_Tlist()]
 
         # Construct system of equations
         def f_state(z, x):
