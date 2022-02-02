@@ -22,7 +22,7 @@ TDependentRateCoeffs = namedtuple('TDependentRateCoeffs', [
     "hnlgp",
     "hnlgm",
     "hnlhp",
-    "hnlhm",
+    "hnlhm",    
     "hnlh0",
     "hnldeq"
 ])
@@ -171,7 +171,7 @@ class Rates_Jurai(Rates_Interface):
         self.H = H
         self.kc_list = kc_list
 
-        gP_, gM_ = interpFast(mp.M, kc_list, tot)
+        gP_, gM_ = interpFast(mp.M, kc_list, tot=tot)
         hP_, hM_ = interpHFast(mp.M, kc_list)
 
         # We will need caching to retain the efficiency boost from 2D interpolation

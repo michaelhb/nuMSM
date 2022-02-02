@@ -25,7 +25,6 @@ class Solver(ABC):
         self.mp = model_params
 
         self.T0 = get_T0(self.mp)
-        # print("T0: {}".format(self.T0))
 
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None
@@ -80,7 +79,6 @@ class Solver(ABC):
 
         for i, T in enumerate(self.get_Tlist()):
             lv.append(self.smdata.s(T)*(self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
-            # lv.append((self._total_hnl_asymmetry[i] + self._total_lepton_asymmetry[i]))
 
         print(lv)
 
@@ -233,14 +231,14 @@ class AveragedSolver(Solver):
             self._full_solution = sol.y.T
 
     def get_initial_state(self):
-        #equilibrium number density for a relativistic fermion, T = T0
+        #equilibrium number density for a relativistic neutrino, T = T0
         neq = (3.*zeta3*(self.T0**3))/(4*(np.pi**2))
+        # neq = (3. * zeta3 * (self.T0 ** 3)) / (2 * (np.pi ** 2)) # don't forget g!
 
         #entropy at T0
         s = self.smdata.s(self.T0)
 
         n_plus0 = -np.identity(2)*neq/s
-        # n_plus0 = -np.identity(2) * neq / s
         # n_plus0 = -((self.T0**3)*np.identity(2) * neq) / s
         r_plus0 = np.einsum('kij,ji->k',tau,n_plus0)
 
@@ -363,6 +361,16 @@ class AveragedSolver(Solver):
             return np.real(np.dot(jac*res, np.linalg.inv(-jac*Aprime/cutoff + np.eye(11))))
         else:
             return jac*np.real(res)
+
+    def get_densities(self):
+        densities = []
+
+        for i_T, T in enumerate(self.get_Tlist()):
+            density = [T, self.smdata.s(T).tolist()]
+            density += self._full_solution[i_T][3:11].tolist()
+            densities.append(density)
+
+        return densities
 
 class QuadratureSolver(Solver):
 
@@ -574,7 +582,7 @@ class QuadratureSolver(Solver):
         for i_T, T in enumerate(self.get_Tlist()):
             for i_kc, kc in enumerate(self.kc_list):
                 ix_start = 3 + 8*i_kc
-                density = [T, kc, self.smdata.s(T).tolist()]
+                density = [T, kc, self.weights[i_kc], self.smdata.s(T).tolist()]
                 density += self._full_solution[i_T][ix_start : ix_start + 8].tolist()
                 densities.append(density)
 

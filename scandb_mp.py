@@ -9,6 +9,10 @@ from collections import namedtuple
 """
 Similar to ScanDB, but designed for multiple worker pools running. User provides a precomputed list of samples
 to be run. These are initialised as "empty" entries with bau=NONE, lock=FALSE. 
+
+#TODO: Including the SQL view code here is bad design - this class shouldn't contain that kind of 
+application / domain logic. 
+
 """
 
 # Extension of ModelParams, adding in solver attributes for scanworker_mp.py
@@ -30,6 +34,9 @@ class MPScanDB:
         if save_densities and not self.density_table_exists():
             self.create_density_table()
 
+        if save_densities and not self.avg_density_table_exists():
+            self.create_avg_density_table()
+
         # Speedup, maybe?
         if fast_insert:
             c = self.conn.cursor()
@@ -49,17 +56,22 @@ class MPScanDB:
 
     def point_table_exists(self):
         c = self.conn.cursor()
-        c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='points' ''')
+        c.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='points' ''')
         return c.fetchone()[0] == 1
 
     def solution_table_exists(self):
         c = self.conn.cursor()
-        c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='solutions' ''')
+        c.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='solutions' ''')
         return c.fetchone()[0] == 1
 
     def density_table_exists(self):
         c = self.conn.cursor()
-        c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='densities' ''')
+        c.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='densities' ''')
+        return c.fetchone()[0] == 1
+
+    def avg_density_table_exists(self):
+        c = self.conn.cursor()
+        c.execute('''SELECT count(name) FROM sqlite_master WHERE type='table' AND name='densities_avg' ''')
         return c.fetchone()[0] == 1
 
     def create_point_table(self):
@@ -79,24 +91,46 @@ class MPScanDB:
         c = self.conn.cursor()
 
         # Create underlying table
-        c.execute('''CREATE TABLE densities (hash text, temp double, kc real, entropy double, rp11 double, rp22 double, rpreal double, rpimag double, 
+        c.execute('''CREATE TABLE densities (hash text, temp double, kc real, weight real, entropy double, rp11 double, rp22 double, rpreal double, rpimag double, 
             rm11 double, rm22 double, rmreal double, rmimag real)''')
 
         # Create view in HNL basis
         # Getting around stupid Mathematica bug (no support for POW function!)
         c.execute('''
-            CREATE VIEW IF NOT EXISTS densities_hnl AS
+            CREATE VIEW yields_hnl AS
             SELECT
-                points.hash, temp, kc,
-                (entropy/(temp*temp*temp))*(rp11 + 0.5*rm11) + 1.0/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn1,
-                (entropy/(temp*temp*temp))*(rp11 - 0.5*rm11) + 1.0/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn1bar,
-                (entropy/(temp*temp*temp))*(rp22 + 0.5*rm22) + 1.0/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn2,
-                (entropy/(temp*temp*temp))*(rp22 - 0.5*rm22) + 1.0/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) AS dn2bar,
-                1.0/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS fn1,
-                1.0/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) as fn2
+                points.hash, temp, kc, weight,
+                (rp11 + 0.5*rm11) + ((temp*temp*temp)/entropy)/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS yn1kc,
+                (rp11 - 0.5*rm11) + ((temp*temp*temp)/entropy)/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS yn1barkc,
+                (rp22 + 0.5*rm22) + ((temp*temp*temp)/entropy)/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) AS yn2kc,
+                (rp22 - 0.5*rm22) + ((temp*temp*temp)/entropy)/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) AS yn2barkc,
+                ((temp*temp*temp)/entropy)/(EXP((SQRT((M + dM)*(M + dM) + temp*temp*kc*kc)/temp)) + 1.0) AS yn1eqkc,
+                ((temp*temp*temp)/entropy)/(EXP((SQRT((M - dM)*(M - dM) + temp*temp*kc*kc)/temp)) + 1.0) as yn2eqkc
             FROM
                 densities INNER JOIN points ON densities.hash = points.hash
-            ORDER BY temp DESC, kc ASC;''')
+            ORDER BY temp DESC, kc ASC''')
+
+        self.conn.commit()
+
+    def create_avg_density_table(self):
+        c = self.conn.cursor()
+
+        c.execute('''CREATE TABLE densities_avg (hash text, temp double, entropy double, np11 double, np22 double, npreal double, npimag double, 
+            nm11 double, nm22 double, nmreal double, nmimag real)''')
+
+        # Create view in HNL basis
+        c.execute('''
+            CREATE VIEW yields_avg_hnl AS 
+            SELECT
+                points.hash, temp,
+                (np11 + 0.5*nm11) + ((temp*temp*temp)/entropy)*0.18269074235036 AS dn1,
+                (np11 - 0.5*nm11) + ((temp*temp*temp)/entropy)*0.18269074235036 AS dn1bar,
+                (np22 + 0.5*nm22) + ((temp*temp*temp)/entropy)*0.18269074235036 AS dn2,
+                (np22 - 0.5*nm22) + ((temp*temp*temp)/entropy)*0.18269074235036 AS dn2bar,
+                ((temp*temp*temp)/entropy)*0.18269074235036 AS yeq
+            FROM
+                densities_avg INNER JOIN points on densities_avg.hash = points.hash
+            ORDER BY temp DESC;''')
 
         self.conn.commit()
 
@@ -237,15 +271,27 @@ class MPScanDB:
 
     def save_densities(self, sample, densities):
         """
-        densities should be a list of (T, kc, entropy, <8 real components>) tuples
+        densities should be a list of (T, kc, weight, entropy, <8 real components>) tuples
         """
         hash = self.get_hash(sample)
         c = self.conn.cursor()
 
         for d in densities:
-            c.execute('''INSERT INTO densities VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',(hash, *d))
+            c.execute('''INSERT INTO densities VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',(hash, *d))
 
         self.conn.commit()
+
+    def save_avg_densities(self, sample, densities_avg):
+        """
+        densities_avg should be a list of (T, entropy, <8 real components>) tuples
+        """
+        hash = self.get_hash(sample)
+        c = self.conn.cursor()
+
+        for d in densities_avg:
+            c.execute('''INSERT INTO densities_avg VALUES (?,?,?,?,?,?,?,?,?,?,?)''', (hash, *d))
+
+        self.conn.commit
 
     def get_solution(self, sample):
         hash = self.get_hash(sample)

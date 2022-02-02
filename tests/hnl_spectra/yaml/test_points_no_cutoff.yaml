@@ -1,0 +1,24 @@
+M_10_dM_5em9_QuadratureSolver_SW_nocut:
+  description: "Test cube (M=10.0,dM=5e-9,Imw=6), quadrature solver, no cutoff"
+  heirarchy: 1
+  M: 10.0
+  dM: 5e-9
+  Imw: 6
+  solver_class: "QuadratureSolver"
+  n_kc: 50
+  kc_min: 0
+  kc_max: 10
+  quadscheme: "legendre"
+  cutoff:
+#M_10_dM_5em9_QuadratureSolver_WW_nocut:
+#  description: "Test cube (M=10.0,dM=5e-9,Imw=0.5), quadrature solver, no cutoff"
+#  heirarchy: 1
+#  M: 10.0
+#  dM: 5e-9
+#  Imw: 0.5
+#  solver_class: "QuadratureSolver"
+#  n_kc: 50
+#  kc_min: 0
+#  kc_max: 10
+#  quadscheme: "legendre"
+#  cutoff:

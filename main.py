@@ -49,7 +49,7 @@ if __name__ == '__main__':
     start = time.time()
     solver.solve(eigvals=True)
     end = time.time()
-    bau = (28./78.) * solver.get_final_lepton_asymmetry()
+    bau = (28./79.) * solver.get_final_lepton_asymmetry()
 
     title = "M = {}, dM = {:.3e}, Imw = {:.2f}, n_kc = {}, cutoff = {}, BAU = {:.3e}".format(
         mp.M, mp.dM, mp.Imw, n_kc, str(cutoff), bau

@@ -57,10 +57,6 @@ def get_solver(sample):
 
     # Kludge city
     if sample.solvername == "AveragedSolver":
-
-        if save_densities:
-            raise Exception("Cannot save HNL-momentum densities when using AveragedSolver")
-
         rates = Rates_Jurai(sample, sample.heirarchy, np.array([1.0]), tot=True)
         solver = solvers.AveragedSolver(
             model_params=sample, rates_interface=rates, TF=args.t_final, H=sample.heirarchy, fixed_cutoff=sample.cutoff,
@@ -132,7 +128,12 @@ if rank == 0: # sample dispatcher / result recorder
             if save_solutions:
                 db.save_solution(ret["sample"], ret["solution_bau"])
             if save_densities:
-                db.save_densities(ret["sample"], ret["solution_densities"])
+                if ret["sample"].solvername == "AveragedSolver":
+                    db.save_avg_densities(ret["sample"], ret["solution_densities"])
+                elif ret["sample"].solvername == "QuadratureSolver":
+                    db.save_densities(ret["sample"], ret["solution_densities"])
+                else:
+                    raise Exception("Unknown solver!")
 
 else: # worker process
     while True:

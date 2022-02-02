@@ -29,10 +29,21 @@ if __name__ == '__main__':
         M = float(attrs["M"])
         dM = float(attrs["dM"])
         Imw = float(attrs["Imw"])
-        kc_min = float(attrs["kc_min"])
-        kc_max = float(attrs["kc_max"])
-        n_kc = int(attrs["n_kc"])
-        quadscheme = attrs["quadscheme"]
+        solver_class = attrs["solver_class"]
+
+        if solver_class == "AveragedSolver":
+            quadscheme = None
+            kc_min = -1
+            kc_max = -1
+            n_kc = -1
+        elif solver_class == "QuadratureSolver":
+            quadscheme = attrs["quadscheme"]
+            kc_min = float(attrs["kc_min"])
+            kc_max = float(attrs["kc_max"])
+            n_kc = int(attrs["n_kc"])
+        else:
+            raise Exception("Unknown solver!")
+
 
         cutoff = attrs["cutoff"]
         if cutoff is not None:
@@ -40,7 +51,7 @@ if __name__ == '__main__':
 
         mp = ModelParams(M=M, dM=dM, Imw=Imw, Rew=Rew_opt, delta=delta_opt, eta=eta_opt)
 
-        sample = Sample(**mp._asdict(), tag=tag, description=desc, solvername="QuadratureSolver",
+        sample = Sample(**mp._asdict(), tag=tag, description=desc, solvername=solver_class,
                         n_kc=n_kc, kc_min=kc_min, kc_max=kc_max, quadscheme=quadscheme, heirarchy=H, cutoff=cutoff)
 
         db.add_sample(sample)
