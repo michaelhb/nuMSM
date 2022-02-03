@@ -5,6 +5,11 @@ Data structures and common utility functions
 """
 from collections import namedtuple
 
+"""
+Pass no args to solvers by default
+"""
+ode_par_defaults = {}
+
 '''
 Sphaleron freeze out temperature
 '''

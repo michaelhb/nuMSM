@@ -10,7 +10,6 @@ from scipy.sparse.linalg import eigs as sparse_eig
 from nuMSM_solver.common import *
 from nuMSM_solver.load_precomputed import *
 
-ode_par_defaults = {}
 mpl.rcParams['figure.dpi'] = 300
 
 
@@ -44,12 +43,13 @@ class SolverInterface(ABC):
 
 class Solver(SolverInterface):
 
-    def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, fixed_cutoff = None,
-                 ode_pars = ode_par_defaults, method="Radau", source_term=True):
+    def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, cutoff = None,
+                 output_grid_size = 200, ode_pars = ode_par_defaults, method="Radau", source_term=True):
 
         self.TF = TF
         self.mp = model_params
         self.T0 = get_T0(self.mp)
+        self.Tlist = Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), output_grid_size), self.mp.M)
 
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None
@@ -57,11 +57,11 @@ class Solver(SolverInterface):
         self.H = H
         self.ode_pars = ode_pars
         self.eig_cutoff = eig_cutoff
-        self.fixed_cutoff = fixed_cutoff
+        self.fixed_cutoff = cutoff
         self.method = method
         self.use_source_term = source_term
 
-        if eig_cutoff and (fixed_cutoff is not None):
+        if eig_cutoff and (cutoff is not None):
             raise Exception("Cannot use fixed and dynamic cutoff at the same time")
 
         super().__init__()
@@ -88,7 +88,7 @@ class Solver(SolverInterface):
         return self._total_hnl_asymmetry
 
     def get_Tlist(self):
-        return Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), 200), self.mp.M)
+        return self.Tlist
 
 
 class AveragedSolver(Solver):
@@ -441,7 +441,6 @@ class QuadratureSolver(Solver):
         return np.array(res)
 
     def calc_lepton_asymmetry(self, sol, zlist):
-
         res = []
 
         for i, z in enumerate(zlist):
