@@ -49,7 +49,8 @@ class Solver(SolverInterface):
         self.TF = TF
         self.mp = model_params
         self.T0 = get_T0(self.mp)
-        self.Tlist = Tz(np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), output_grid_size), self.mp.M)
+        self.zlist = np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), output_grid_size)
+        self.Tlist = Tz(self.zlist, self.mp.M)
 
         self._total_lepton_asymmetry = None
         self._total_hnl_asymmetry = None
@@ -456,7 +457,8 @@ class QuadratureSolver(Solver):
         zF = zT(self.TF, self.mp.M)
 
         # Output grid
-        zlist = [zT(T, self.mp.M) for T in self.get_Tlist()]
+        # zlist = [zT(T, self.mp.M) for T in self.get_Tlist()]
+        # zlist = np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), self.output_grid_size)
 
         # Construct system of equations
         def f_state(z, x):
@@ -474,15 +476,17 @@ class QuadratureSolver(Solver):
         # Solve them
         if self.method == None or self.method == "LSODE":
             # Default to old odeint / LSODE integrator
-            sol = odeint(f_state, initial_state, zlist, Dfun=jac, full_output=True, tfirst=True, **self.ode_pars)
-            self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], zlist)
-            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], zlist)
+            sol = odeint(f_state, initial_state, self.zlist, Dfun=jac, full_output=True, tfirst=True, **self.ode_pars)
+            self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol[0], self.zlist)
+            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol[0], self.zlist)
             self._full_solution = sol[0]
         else:
             # Otherwise try solve_ivp
-            sol = solve_ivp(f_state, (z0, zF), y0=initial_state, jac=jac, t_eval=zlist, method=self.method, **self.ode_pars)
-            self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol.y.T, zlist)
-            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, zlist)
+            sol = solve_ivp(f_state, (z0, zF), y0=initial_state, jac=jac, t_eval=self.zlist, method=self.method, **self.ode_pars)
+            print(sol.message)
+            print(sol.success)
+            self._total_lepton_asymmetry = self.calc_lepton_asymmetry(sol.y.T, self.zlist)
+            self._total_hnl_asymmetry = self.calc_hnl_asymmetry(sol.y.T, self.zlist)
             self._full_solution = sol.y.T
 
     def get_densities(self):
