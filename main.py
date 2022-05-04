@@ -20,22 +20,22 @@ if __name__ == '__main__':
     rew_opt = np.pi / 4.0
 
     # Model params
-    mp = ModelParams(M=2.0, dM=1e-9, Imw=4.0, Rew=rew_opt, delta=delta_opt, eta=eta_opt)
+    mp = ModelParams(M=1.0, dM=5e-9, Imw=6, Rew=rew_opt, delta=delta_opt, eta=eta_opt)
 
-    n_kc = 10
+    n_kc = 15
     kc_max = 10
     # kc_list = np.linspace(0, kc_max, n_kc)
-    cutoff = 1e5
+    cutoff = None
     eig = False
     use_source_term = True
-    TF = Tsph
+    TF = 10.
     H = 1
-    ode_pars = {'atol': 1e-15, 'rtol': 1e-6}
+    ode_pars = {'atol': 1e-20, 'rtol': 1e-4}
     # ode_pars = {'atol': 1e-15, 'rtol': 1e-8}
 
     # quadrature = GaussianQuadrature(10, 0.1, 10, mp, H, tot=True, qscheme="radau")
-    quadrature = GaussianQuadrature(n_kc, 0, kc_max, qscheme="legendre")
-    rates = Rates_Jurai(mp, H, quadrature.kc_list(), tot=False)
+    quad = GaussianQuadrature(n_kc, 0, kc_max, qscheme="legendre")
+    rates = Rates_Jurai(mp, H, quad.kc_list(), tot=False)
     # rates = Rates_Jurai(mp, H, [1.0], tot=False)
     # rates = Rates_Fortran(mp,1)
     # quadrature = TrapezoidalQuadrature(kc_list, rates)
@@ -45,9 +45,9 @@ if __name__ == '__main__':
 
     # solver = AveragedSolver(model_params=mp, rates_interface=rates, TF=TF, H=1, cutoff=1e5,
     #                          ode_pars=ode_pars, source_term=use_source_term, method="Radau")
-    solver = QuadratureSolver(quadrature, rates,
-                             model_params=mp, TF=TF, H=H, fixed_cutoff=cutoff, eig_cutoff=eig,
-                             method="Radau", ode_pars=ode_pars, source_term=use_source_term)
+    solver = QuadratureSolver(rates, quad,
+                                   model_params=mp, TF=TF, H=H, cutoff=cutoff, eig_cutoff=False,
+                                   method="Radau", ode_pars=ode_pars, source_term=True)
 
     start = time.time()
     solver.solve()
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     print("BAU: {:.3e}".format(bau))
 
     title = "M = {}, dM = {}, Imw = {}, n_kc = {}, cutoff = {}, BAU = {:.3e}".format(
-        mp.M, mp.dM, mp.Imw, kc_list.shape[0], cutoff, bau
+        mp.M, mp.dM, mp.Imw, quad.kc_list.shape[0], cutoff, bau
     )
 
     Tlist = solver.get_Tlist()
