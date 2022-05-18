@@ -376,8 +376,8 @@ class QuadratureSolver(Solver):
             top_row.append(-W*tr_h(np.real(Gt_nu_a)))
 
             # Left col
-            left_col.append(-1j * (T ** 2) * self._gamma_N(T, kc, np.imag(rt.GammaTilde_N_a(z))))
-            left_col.append(-2.0 * (T ** 2) * self._gamma_N(T, kc, np.real(rt.GammaTilde_N_a(z))))
+            left_col.append(-1j * (T ** 2) * self.gamma_N(T, kc, np.imag(rt.GammaTilde_N_a(z))))
+            left_col.append(-2.0 * (T ** 2) * self.gamma_N(T, kc, np.real(rt.GammaTilde_N_a(z))))
 
             H_0 = H_N - H_I
 
