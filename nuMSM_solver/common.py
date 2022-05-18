@@ -54,6 +54,7 @@ def f_N(T, M, kc):
 def f_Ndot(kc, T, mp, smdata):
     E_k = np.sqrt(mp.M**2 + (T**2)*(kc**2))
     Mpl = MpStar(zT(T, mp.M), mp, smdata)
+    # return -(T/Mpl)*(E_k*np.exp(E_k/T))/((np.exp(E_k/T) + 1)**2)
     return -1*((T*E_k)/Mpl)*np.exp(E_k/T)/((1 + np.exp(E_k/T))**2)
 
 def Tz(z, M):
@@ -120,10 +121,12 @@ tau = np.array([
 
 """Structure constants for commutators and anticommutators"""
 def gen_Cijk():
-    return 1j*np.imag(np.einsum('iab,jbc,kca->ijk',2*tau, tau, tau))
+    return np.einsum('ilm,jmn,knl', tau, tau, tau) - np.einsum('ilm,kmn,jnl', tau, tau, tau)
+    # return 1j*np.imag(np.einsum('iab,jbc,kca->ijk',2*tau, tau, tau))
 
 def gen_Aijk():
-    return np.real(np.einsum('iab,jbc,kca->ijk',2*tau, tau, tau))
+    return np.einsum('imn,jnl,klm', tau, tau, tau) + np.einsum('jmn,inl,klm', tau, tau, tau)
+    # return np.real(np.einsum('iab,jbc,kca->ijk',2*tau, tau, tau))
 
 # Generate on module load
 Cijk = gen_Cijk()
@@ -132,10 +135,12 @@ Aijk = gen_Aijk()
 """Convert commutators and anticommutators to matrix multiplication."""
 
 def Ch(H):
-    return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
+    # return np.einsum('inm,mn,ijk->kj',tau,H,Cijk)
+    return np.einsum('inm,mn,jik->kj', tau, H, Cijk)
 
 def Ah(H):
-    return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
+    # return np.einsum('inm,mn,ijk->kj',tau,H,Aijk)
+    return np.einsum('inm,mn,jik->kj', tau, H, Aijk)
 
 def tr_h(H_a):
     """

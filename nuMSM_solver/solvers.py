@@ -332,13 +332,8 @@ class QuadratureSolver(Solver):
         # Contract with susc matrix
         return (g_int.T * self.susc(T)).T
 
-    def gamma_N(self, z, kc, rt, imag=False):
-        T = Tz(z, self.mp.M)
-
-        G_N = np.imag(rt.GammaTilde_N_a(z)) if imag else np.real(rt.GammaTilde_N_a(z))
-
-        return 2.0 * T**2 * f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ab,kij,aji->kb', self.susc(T), tau,
-                                                                                      G_N)
+    def gamma_N(self, T, kc, G_N):
+        return f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ijk,akj,ab->ib', tau, G_N, self.susc(T))
 
     def source_term(self, z):
         T = Tz(z, self.mp.M)
@@ -347,9 +342,7 @@ class QuadratureSolver(Solver):
 
         for j, kc in enumerate(self.kc_list):
             kc = self.kc_list[j]
-            St = -1*(T**3)*(1.0/self.smdata.s(T))*(
-                f_Ndot(kc, T, self.mp, self.smdata) + \
-                3.0*((T**2)/MpStar(z, self.mp, self.smdata))*f_N(T, self.mp.M, kc))
+            St = -(1.0/self.smdata.s(T))*(3*(T**5)/MpStar(z, self.mp, self.smdata))*f_Ndot(kc, T, self.mp, self.smdata)
             Svec += [St, St, 0, 0, 0, 0, 0, 0]
 
         return jac * np.array(Svec)
@@ -383,13 +376,12 @@ class QuadratureSolver(Solver):
             top_row.append(-W*tr_h(np.real(Gt_nu_a)))
 
             # Left col
-            left_col.append(-0.5j*self.gamma_N(z, kc, rt, imag=True))
-            left_col.append(-1*self.gamma_N(z, kc, rt, imag=False))
+            left_col.append(-1j * (T ** 2) * self._gamma_N(T, kc, np.imag(rt.GammaTilde_N_a(z))))
+            left_col.append(-2.0 * (T ** 2) * self._gamma_N(T, kc, np.real(rt.GammaTilde_N_a(z))))
 
             H_0 = H_N - H_I
 
             # Diag blocks
-
             # Part involving the interaction Hamiltonian
             b11_HI = -1j*Ch(np.real(H_I)) - 0.5*Ah(np.real(G_N))
             b12_HI = 0.5*Ch(np.imag(H_I)) - 0.25j*Ah(np.imag(G_N))
