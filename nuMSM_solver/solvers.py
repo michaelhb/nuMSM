@@ -10,6 +10,8 @@ from scipy.sparse.linalg import eigs as sparse_eig
 from nuMSM_solver.common import *
 from nuMSM_solver.load_precomputed import *
 
+from numba import jit, njit
+
 mpl.rcParams['figure.dpi'] = 300
 
 
@@ -319,18 +321,13 @@ class QuadratureSolver(Solver):
 
         return np.real(x0)
 
-    def gamma_omega(self, z):
-        T = Tz(z, self.mp.M)
-
-        # Integrate rate
-        g_int = np.zeros(3, dtype="complex128")
-        for wi, rt, kc in zip(self.weights, self.rates, self.kc_list):
-            g_int += wi*(kc**2)*rt.Gamma_nu_a(z)*f_nu(kc)*(1 - f_nu(kc))
-
-        g_int *= (T**2)/(np.pi**2)
-
-        # Contract with susc matrix
-        return (g_int.T * self.susc(T)).T
+    def gamma_nu(self, T):
+        def G(a, b):
+            g = 0
+            for w, rt, kc in zip(self.weights, self.rates, self.kc_list):
+                g += w*(kc**2)*rt.Gamma_nu_a(zT(T, self.mp.M))[a]*f_nu(kc)*(1 - f_nu(kc))
+            return -1.0*self.susc(T)[a,b]*(T**2/(np.pi**2))*g
+        return np.fromfunction(G, (3,3), dtype=int)
 
     def gamma_N(self, T, kc, G_N):
         return f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ijk,akj,ab->ib', tau, G_N, self.susc(T))
@@ -342,7 +339,7 @@ class QuadratureSolver(Solver):
 
         for j, kc in enumerate(self.kc_list):
             kc = self.kc_list[j]
-            St = -(1.0/self.smdata.s(T))*(3*(T**5)/MpStar(z, self.mp, self.smdata))*f_Ndot(kc, T, self.mp, self.smdata)
+            St = -(1.0 / self.smdata.s(T)) * f_Ndot(kc, T, self.mp, self.smdata)
             Svec += [St, St, 0, 0, 0, 0, 0, 0]
 
         return jac * np.array(Svec)
@@ -351,7 +348,7 @@ class QuadratureSolver(Solver):
         T = Tz(z, self.mp.M)
 
         # Top left block, only part that doesn't depend on kc.
-        g_nu = -self.gamma_omega(z)
+        g_nu = self.gamma_nu(T)
 
         top_row = []
         left_col = []
@@ -459,6 +456,7 @@ class QuadratureSolver(Solver):
 
             if self.use_source_term:
                 return res + self.source_term(z)
+                # return res - self.source_term(z)
             else:
                 return res
 

@@ -54,8 +54,7 @@ def f_N(T, M, kc):
 def f_Ndot(kc, T, mp, smdata):
     E_k = np.sqrt(mp.M**2 + (T**2)*(kc**2))
     Mpl = MpStar(zT(T, mp.M), mp, smdata)
-    # return -(T/Mpl)*(E_k*np.exp(E_k/T))/((np.exp(E_k/T) + 1)**2)
-    return -1*((T*E_k)/Mpl)*np.exp(E_k/T)/((1 + np.exp(E_k/T))**2)
+    return -1*((T*E_k)/Mpl)*(np.exp(E_k/T)/((1 + np.exp(E_k/T))**2))
 
 def Tz(z, M):
     return Tsph*np.exp(-z)
