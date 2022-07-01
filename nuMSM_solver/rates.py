@@ -7,6 +7,8 @@ import numpy as np
 from nuMSM_solver.yukawasCI import FM
 from os import path
 
+from numba import vectorize
+
 from leptotools.momentumDep import interpHFast, interpFast
 from leptotools.scantools import leptogenesisScanSetup
 
@@ -78,29 +80,43 @@ def rates_from_tc(tc, mp, H):
          for a in range(3)])
 
     # Construct the integrated rate functions
+    #@njit
     def Gamma_nu_a(z):
-        return np.array([hhc[a] * (tc.nugp(Tz(z, mp.M)) + tc.nugm(Tz(z, mp.M))) for a in range(3)])
+        T = Tz(z, mp.M)
+        return np.array([hhc[a] * (T*tc.nugp(T) + T*tc.nugm(T)) for a in range(3)]).T
 
+    @njit
     def GammaTilde_nu_a(z):
-        res = np.array([-tc.hnlgp(Tz(z, mp.M)) * YNplus[a].T + tc.hnlgm(Tz(z, mp.M)) * YNminus[a].T for a in range(3)])
+        T = Tz(z, mp.M)
+        res = np.array([-T*tc.hnlgp(T) * YNplus[a].T + T*tc.hnlgm(T) * YNminus[a].T for a in range(3)])
         return res
 
+    @njit
     def Hamiltonian_N(z):
-        return mp.dM * np.array([[0, 1], [1, 0]]) * tc.hnlh0(Tz(z, mp.M)) \
-               + tc.hnlhp(Tz(z, mp.M)) * np.sum(YNplus, axis=0) \
-               + tc.hnlhm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
+        T = Tz(z, mp.M)
+        return mp.dM * np.array([[0, 1], [1, 0]]) * T*tc.hnlh0(T) \
+               + T*tc.hnlhp(T) * np.sum(YNplus, axis=0) \
+               + T*tc.hnlhm(T) * np.sum(YNminus, axis=0)
 
+    @njit
     def Gamma_N(z):
-        return tc.hnlgp(Tz(z, mp.M)) * np.sum(YNplus, axis=0) + tc.hnlgm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
+        T = Tz(z, mp.M)
+        return T*tc.hnlgp(T) * np.sum(YNplus, axis=0) + T*tc.hnlgm(T) * np.sum(YNminus, axis=0)
 
+    @njit
     def GammaTilde_N_a(z):
-        return np.array([-tc.nugp(Tz(z, mp.M)) * YNplus[a] + tc.nugm(Tz(z, mp.M)) * YNminus[a] for a in range(3)])
+        T = Tz(z, mp.M)
+        return np.array([-T*tc.nugp(T) * YNplus[a] + T*tc.nugm(T) * YNminus[a] for a in range(3)])
 
+    @njit
     def Seq(z):
-        return tc.hnldeq(Tz(z, mp.M)) * np.identity(2)
+        T = Tz(z, mp.M)
+        return T*tc.hnldeq(T) * np.identity(2)
 
+    @njit
     def Hamiltonian_N_Int(z):
-        return tc.hnlhp(Tz(z, mp.M)) * np.sum(YNplus, axis=0) + tc.hnlhm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
+        T = Tz(z, mp.M)
+        return T*tc.hnlhp(T) * np.sum(YNplus, axis=0) + tc.hnlhm(Tz(z, mp.M)) * np.sum(YNminus, axis=0)
 
     return Rates(
         Gamma_nu_a,
@@ -119,7 +135,7 @@ class Rates_Interface(ABC):
         pass
 
     @abstractmethod
-    def get_rates(self, kc):
+    def get_rates(self, kc_list):
         pass
 
 class Rates_Fortran(Rates_Interface):
@@ -137,12 +153,14 @@ class Rates_Fortran(Rates_Interface):
         return rates_from_tc(tc, self.mp, self.H)
 
     @lru_cache(maxsize=None)
-    def get_rates(self, kc):
-        path_rates = path.join(self.rates_dir,
-            "rates/Int_OrgH_MN{}E-1_kc{}E-1.dat".format(
-                int(self.mp.M*10),int(kc * 10)))
-        tc = self.get_rate_coefficients(path_rates)
-        return rates_from_tc(tc, self.mp, self.H)
+    def get_rates(self, kc_list):
+        rates = []
+        for kc in kc_list:
+            path_rates = path.join(self.rates_dir,
+                "rates/Int_OrgH_MN{}E-1_kc{}E-1.dat".format(
+                    int(self.mp.M*10),int(kc * 10)))
+            tc = self.get_rate_coefficients(path_rates)
+            rates.append(rates_from_tc(tc, self.mp, self.H))
 
     def get_rate_coefficients(self, path):
 
@@ -167,14 +185,14 @@ class Rates_Jurai(Rates_Interface):
         self.H = H
         self.kc_list = kc_list
 
-        gP_, gM_ = interpFast(mp.M, kc_list, tot=tot)
-        hP_, hM_ = interpHFast(mp.M, kc_list)
+        self.gP, self.gM = interpFast(mp.M, kc_list, tot=tot)
+        self.hP, self.hM = interpHFast(mp.M, kc_list)
 
-        # We will need caching to retain the efficiency boost from 2D interpolation
-        self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(zT(T, mp.M)))
-        self.gM_all = lru_cache(maxsize=None)(lambda T: gM_(zT(T, mp.M)))
-        self.hP_all = lru_cache(maxsize=None)(lambda T: hP_(zT(T, mp.M)))
-        self.hM_all = lru_cache(maxsize=None)(lambda T: hM_(zT(T, mp.M)))
+        # # We will need caching to retain the efficiency boost from 2D interpolation
+        # self.gP_all = lru_cache(maxsize=None)(lambda T: gP_(zT(T, mp.M)))
+        # self.gM_all = lru_cache(maxsize=None)(lambda T: gM_(zT(T, mp.M)))
+        # self.hP_all = lru_cache(maxsize=None)(lambda T: hP_(zT(T, mp.M)))
+        # self.hM_all = lru_cache(maxsize=None)(lambda T: hM_(zT(T, mp.M)))
 
     @lru_cache(maxsize=None)
     def get_averaged_rates(self):
@@ -210,25 +228,19 @@ class Rates_Jurai(Rates_Interface):
 
         return rates_from_tc(tc, self.mp, self.H)
 
+    def get_rates(self, kc_list):
+        rates = []
 
-    @lru_cache(maxsize=None)
-    def get_rates(self, kc):
-        assert(kc in self.kc_list)
-        ix = self.kc_list.tolist().index(kc)
-
-        gP = lambda T: self.gP_all(T)[ix] * T
-        gM = lambda T: self.gM_all(T)[ix] * T
-        # gM = lambda T: 0
-        hP = lambda T: self.hP_all(T)[ix] * T
-        hM = lambda T: self.hM_all(T)[ix] * T
-        # hM = lambda T: 0
-        h0 = lambda T: -self.mp.M/np.sqrt((kc*T)**2 + self.mp.M**2)
+        # gP = lambda T: self.gP(T) * T
+        # gM = lambda T: self.gM(T) * T
+        # hP = lambda T: self.hP(T) * T
+        # hM = lambda T: self.hM(T) * T
+        h0 = lambda T: [-self.mp.M/np.sqrt((kc*T)**2 + self.mp.M**2) for kc in kc_list]
         hnldeq = lambda T: 0 # Don't call this!
 
         tc = TDependentRateCoeffs(
-            nugp=gP, nugm=gM, hnlgp=gP, hnlgm=gM, hnlhp=hP, hnlhm=hM,
+            nugp=self.gP, nugm=self.gM, hnlgp=self.gP, hnlgm=self.gM, hnlhp=self.hP, hnlhm=self.hM,
             hnlh0=h0, hnldeq=hnldeq
         )
 
         return rates_from_tc(tc, self.mp, self.H)
-

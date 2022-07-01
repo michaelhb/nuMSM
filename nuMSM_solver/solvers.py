@@ -297,9 +297,10 @@ class QuadratureSolver(Solver):
         self.kc_list = quadrature.kc_list()
         self.weights = quadrature.weights()
 
-        self.rates = []
-        for kc in self.kc_list:
-            self.rates.append(rates_interface.get_rates(kc))
+        self.rates = rates_interface.get_rates(self.kc_list)
+        # self.rates = []
+        # for kc in self.kc_list:
+        #     self.rates.append(rates_interface.get_rates(kc))
 
         test_data = path.abspath(path.join(path.dirname(__file__), '../test_data/'))
 
@@ -321,13 +322,20 @@ class QuadratureSolver(Solver):
 
         return np.real(x0)
 
-    def gamma_nu(self, T):
-        def G(a, b):
-            g = 0
-            for w, rt, kc in zip(self.weights, self.rates, self.kc_list):
-                g += w*(kc**2)*rt.Gamma_nu_a(zT(T, self.mp.M))[a]*f_nu(kc)*(1 - f_nu(kc))
-            return -1.0*self.susc(T)[a,b]*(T**2/(np.pi**2))*g
-        return np.fromfunction(G, (3,3), dtype=int)
+    # def gamma_nu(self, T):
+    #     def G(a, b):
+    #         g = 0
+    #         for w, rt, kc in zip(self.weights, self.rates, self.kc_list):
+    #             g += w*(kc**2)*rt.Gamma_nu_a(zT(T, self.mp.M))[a]*f_nu(kc)*(1 - f_nu(kc))
+    #         return -1.0*self.susc(T)[a,b]*(T**2/(np.pi**2))*g
+    #     return np.fromfunction(G, (3,3), dtype=int)
+
+    @njit
+    def gamma_nu(self, z, weights, rates, kc_list, susc):
+        T = Tz(z, self.mp.M)
+        gvec = np.tensordot(
+            (-T**2/(np.pi**2))*f_nu(kc_list)*(1 - f_nu(kc_list))*weights*(kc_list**2), rates.Gamma_nu_a(z))
+        return (susc.T*gvec).T
 
     def gamma_N(self, T, kc, G_N):
         return f_nu(kc) * (1 - f_nu(kc)) * np.einsum('ijk,akj,ab->ib', tau, G_N, self.susc(T))
@@ -348,7 +356,7 @@ class QuadratureSolver(Solver):
         T = Tz(z, self.mp.M)
 
         # Top left block, only part that doesn't depend on kc.
-        g_nu = self.gamma_nu(T)
+        g_nu = self.gamma_nu(z, self.weights, self.rates, self.kc_list, self.susc(T))
 
         top_row = []
         left_col = []
@@ -356,39 +364,37 @@ class QuadratureSolver(Solver):
         diag_HI = []
 
         n_kc = len(self.kc_list)
-
         jac = jacobian(z, self.mp, self.smdata)
+
+        G_nu_a, Gt_nu_a, Gt_N_a, H_N, H_I, G_N, Seq = [R(z) for R in self.rates]
 
         for i in range(n_kc):
             kc = self.kc_list[i]
-            rt = self.rates[i]
             w_i = self.weights[i]
-
-            G_nu_a, Gt_nu_a, Gt_N_a, H_N, H_I, G_N, Seq = [R(z) for R in rt]
 
             W = (1.0 / (2 * (np.pi ** 2))) * w_i * (kc ** 2)
 
             # Top row
-            top_row.append(2j*W*tr_h(np.imag(Gt_nu_a)))
-            top_row.append(-W*tr_h(np.real(Gt_nu_a)))
+            top_row.append(2j*W*tr_h(np.imag(Gt_nu_a[i])))
+            top_row.append(-W*tr_h(np.real(Gt_nu_a[i])))
 
             # Left col
-            left_col.append(-1j * (T ** 2) * self.gamma_N(T, kc, np.imag(rt.GammaTilde_N_a(z))))
-            left_col.append(-2.0 * (T ** 2) * self.gamma_N(T, kc, np.real(rt.GammaTilde_N_a(z))))
+            left_col.append(-1j * (T ** 2) * self.gamma_N(T, kc, np.imag(Gt_N_a[i])))
+            left_col.append(-2.0 * (T ** 2) * self.gamma_N(T, kc, np.real(Gt_N_a[i])))
 
             H_0 = H_N - H_I
 
             # Diag blocks
             # Part involving the interaction Hamiltonian
-            b11_HI = -1j*Ch(np.real(H_I)) - 0.5*Ah(np.real(G_N))
-            b12_HI = 0.5*Ch(np.imag(H_I)) - 0.25j*Ah(np.imag(G_N))
-            b21_HI = 2*Ch(np.imag(H_I)) - 1j*Ah(np.imag(G_N))
+            b11_HI = -1j*Ch(np.real(H_I[i])) - 0.5*Ah(np.real(G_N[i]))
+            b12_HI = 0.5*Ch(np.imag(H_I[i])) - 0.25j*Ah(np.imag(G_N[i]))
+            b21_HI = 2*Ch(np.imag(H_I[i])) - 1j*Ah(np.imag(G_N[i]))
             diag_HI.append(np.block([[b11_HI, b12_HI], [b21_HI, b11_HI]]))
 
             # Everything else
-            b11_H0 = -1j*Ch(np.real(H_0))
-            b12_H0 = 0.5*Ch(np.imag(H_0))
-            b21_H0 = 2*Ch(np.imag(H_0))
+            b11_H0 = -1j*Ch(np.real(H_0[i]))
+            b12_H0 = 0.5*Ch(np.imag(H_0[i]))
+            b21_H0 = 2*Ch(np.imag(H_0[i]))
             diag_H0.append(np.block([[b11_H0, b12_H0], [b21_H0, b11_H0]]))
 
         res = np.real(np.block([

@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit, vectorize
 
 """
 Data structures and common utility functions
@@ -44,6 +45,7 @@ def get_T0(mp):
     return max(1000.0, 10 * Tosc)
 
 # Equilibrium distribution for SM neutrinos
+@njit
 def f_nu(kc):
     return 1.0/(np.exp(kc) + 1)
 
@@ -56,9 +58,11 @@ def f_Ndot(kc, T, mp, smdata):
     Mpl = MpStar(zT(T, mp.M), mp, smdata)
     return -1*((T*E_k)/Mpl)*(np.exp(E_k/T)/((1 + np.exp(E_k/T))**2))
 
+@njit
 def Tz(z, M):
     return Tsph*np.exp(-z)
 
+@njit
 def zT(T, M):
     return np.log(Tsph/T)
 
