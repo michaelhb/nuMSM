@@ -159,7 +159,7 @@ else: # worker process
                 solver.solve(eigvals=False)
                 end = time.time()
                 time_sol = end - start
-                bau = (28. / 78.) * solver.get_final_lepton_asymmetry()
+                bau = (28. / 79.) * solver.get_final_lepton_asymmetry()
                 logging.info("Point {} finished in {} s, BAU = {}".format(sample, time_sol, bau))
 
                 # Send result back to process 0
