@@ -45,12 +45,15 @@ class SolverInterface(ABC):
 
 class Solver(SolverInterface):
 
-    def __init__(self, model_params=None, TF=Tsph, H = 1, eig_cutoff = False, cutoff = None,
+    def __init__(self, model_params=None, TF=Tsph, T0 = None, H = 1, eig_cutoff = False, cutoff = None,
                  output_grid_size = 200, ode_pars = ode_par_defaults, method="Radau", source_term=True):
 
         self.TF = TF
         self.mp = model_params
-        self.T0 = get_T0(self.mp)
+        if T0 is None:
+            self.T0 = get_T0(self.mp)
+        else:
+            self.T0 = T0
         self.zlist = np.linspace(zT(self.T0, self.mp.M), zT(self.TF, self.mp.M), output_grid_size)
         self.Tlist = Tz(self.zlist, self.mp.M)
 
@@ -97,7 +100,7 @@ class Solver(SolverInterface):
 class AveragedSolver(Solver):
 
     def __init__(self, rates_interface, **kwargs):
-        super(AveragedSolver, self).__init__(**kwargs)
+        Solver.__init__(self, **kwargs)
 
         # Load rates
         self.rates = rates_interface.get_averaged_rates()
